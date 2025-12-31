@@ -18,11 +18,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
   int _cartCount = 0;
   final CartService _cartService = CartService();
+  final GlobalKey<State<CartScreen>> _cartKey = GlobalKey();
 
   List<Widget> get _screens => [
     HomeScreen(onCartChanged: _loadCartCount),
     const CategoriesScreen(),
     CartScreen(
+      key: _cartKey,
       onCartChanged: _loadCartCount,
       onContinueShopping: () {
         setState(() {
@@ -38,6 +40,21 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void initState() {
     super.initState();
     _loadCartCount();
+  }
+
+  void _onTabTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+    
+    // Reload cart when cart tab is selected
+    if (index == 2) {
+      // Trigger cart reload by accessing the cart screen state
+      final cartState = _cartKey.currentState;
+      if (cartState != null) {
+        (cartState as dynamic).refreshCart();
+      }
+    }
   }
 
   Future<void> _loadCartCount() async {
@@ -113,9 +130,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     
     return GestureDetector(
       onTap: () {
-        setState(() {
-          _selectedIndex = index;
-        });
+        _onTabTapped(index);
         _loadCartCount();
       },
       child: Column(

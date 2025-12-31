@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:vortex_app/core/constants/app_colors.dart';
+import 'package:vortex_app/data/services/checkout_service.dart';
+import 'package:vortex_app/presentation/screens/checkout/review_screen.dart';
 
 class PaymentScreen extends StatefulWidget {
   final List<dynamic> paymentMethods;
   final Map<String, dynamic>? checkoutSummary;
+  final Map<String, dynamic> selectedAddress;
+  final Map<String, dynamic> selectedShippingMethod;
 
   const PaymentScreen({
     super.key,
     required this.paymentMethods,
     this.checkoutSummary,
+    required this.selectedAddress,
+    required this.selectedShippingMethod,
   });
 
   @override
@@ -16,7 +22,9 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
+  final CheckoutService _checkoutService = CheckoutService();
   String? _selectedPayment;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -174,7 +182,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           ),
                         ),
                         Text(
-                          '\$124.50',
+                          '\$${(widget.checkoutSummary?['total'] ?? 0.0).toStringAsFixed(2)}',
                           style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -188,9 +196,57 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
                     // Continue Button
                     ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/review');
-                      },
+                      onPressed: _isLoading || _selectedPayment == null
+                          ? null
+                          : () async {
+                              setState(() {
+                                _isLoading = true;
+                              });
+                              
+                              try {
+                                // Set payment method
+                                await _checkoutService.setPaymentMethod(_selectedPayment!);
+                                
+                                // Fetch checkout summary
+                                final summary = await _checkoutService.getCheckoutSummary();
+                                
+                                // Get selected payment method details
+                                final selectedPaymentMethod = widget.paymentMethods.firstWhere(
+                                  (method) => method['code'] == _selectedPayment,
+                                  orElse: () => {},
+                                );
+                                
+                                // Navigate to review screen
+                                if (mounted) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => ReviewScreen(
+                                        checkoutSummary: summary,
+                                        selectedAddress: widget.selectedAddress,
+                                        selectedShippingMethod: widget.selectedShippingMethod,
+                                        selectedPaymentMethod: selectedPaymentMethod,
+                                      ),
+                                    ),
+                                  );
+                                }
+                              } catch (e) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Failed to proceed: $e'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              } finally {
+                                if (mounted) {
+                                  setState(() {
+                                    _isLoading = false;
+                                  });
+                                }
+                              }
+                            },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
@@ -203,16 +259,26 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Text(
-                            'Continue to Review',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                        children: [
+                          if (_isLoading)
+                            const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              ),
+                            )
+                          else
+                            const Text(
+                              'Continue to Review',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                          SizedBox(width: 8),
-                          Icon(Icons.arrow_forward, size: 20),
+                          const SizedBox(width: 8),
+                          if (!_isLoading) const Icon(Icons.arrow_forward, size: 20),
                         ],
                       ),
                     ),

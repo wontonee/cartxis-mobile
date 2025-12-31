@@ -4,7 +4,12 @@ import 'package:vortex_app/data/services/checkout_service.dart';
 import 'package:vortex_app/presentation/screens/checkout/payment_screen.dart';
 
 class ShippingScreen extends StatefulWidget {
-  const ShippingScreen({super.key});
+  final Map<String, dynamic> selectedAddress;
+  
+  const ShippingScreen({
+    super.key,
+    required this.selectedAddress,
+  });
 
   @override
   State<ShippingScreen> createState() => _ShippingScreenState();
@@ -188,6 +193,15 @@ class _ShippingScreenState extends State<ShippingScreen> {
                               try {
                                 await _checkoutService.setShippingMethod(_selectedShipping!);
                                 
+                                // Get selected shipping method details
+                                final selectedShippingMethod = _shippingOptions.firstWhere(
+                                  (method) => method['code'] == _selectedShipping,
+                                  orElse: () => {},
+                                );
+                                
+                                // Fetch checkout summary
+                                final checkoutSummary = await _checkoutService.getCheckoutSummary();
+                                
                                 // Navigate to payment screen
                                 if (mounted) {
                                   Navigator.push(
@@ -195,6 +209,9 @@ class _ShippingScreenState extends State<ShippingScreen> {
                                     MaterialPageRoute(
                                       builder: (_) => PaymentScreen(
                                         paymentMethods: _paymentMethods,
+                                        checkoutSummary: checkoutSummary,
+                                        selectedAddress: widget.selectedAddress,
+                                        selectedShippingMethod: selectedShippingMethod,
                                       ),
                                     ),
                                   );

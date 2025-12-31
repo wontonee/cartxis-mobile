@@ -9,8 +9,7 @@ import 'package:vortex_app/presentation/screens/products/product_list_screen.dar
 import 'package:vortex_app/presentation/screens/products/product_detail_screen.dart';
 import 'package:vortex_app/presentation/screens/categories/categories_screen.dart';
 import 'package:vortex_app/presentation/screens/main/main_navigation_screen.dart';
-import 'package:vortex_app/presentation/screens/checkout/shipping_screen.dart';
-import 'package:vortex_app/presentation/screens/checkout/review_screen.dart';
+// import 'package:vortex_app/presentation/screens/checkout/shipping_screen.dart'; // Requires parameters
 import 'package:vortex_app/presentation/screens/checkout/order_success_screen.dart';
 import 'package:vortex_app/presentation/screens/order/order_detail_screen.dart';
 import 'package:vortex_app/presentation/screens/order/order_list_screen.dart';
@@ -120,11 +119,12 @@ class AppRouter {
           settings: settings,
         );
 
-      case shipping:
-        return MaterialPageRoute(
-          builder: (_) => const ShippingScreen(),
-          settings: settings,
-        );
+      // Shipping screen now requires parameters - navigate with data from CheckoutScreen
+      // case shipping:
+      //   return MaterialPageRoute(
+      //     builder: (_) => const ShippingScreen(selectedAddress: {}),
+      //     settings: settings,
+      //   );
 
       // Payment screen now requires parameters - navigate with data from ShippingScreen
       // case payment:
@@ -133,11 +133,12 @@ class AppRouter {
       //     settings: settings,
       //   );
 
-      case review:
-        return MaterialPageRoute(
-          builder: (_) => const ReviewScreen(),
-          settings: settings,
-        );
+      // Review screen now requires parameters - navigate from PaymentScreen with checkout summary
+      // case review:
+      //   return MaterialPageRoute(
+      //     builder: (_) => const ReviewScreen(),
+      //     settings: settings,
+      //   );
 
       case orderSuccess:
         final args = settings.arguments as Map<String, dynamic>?;

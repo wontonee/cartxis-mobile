@@ -15,7 +15,7 @@ class CartScreen extends StatefulWidget {
   State<CartScreen> createState() => _CartScreenState();
 }
 
-class _CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMixin {
+class _CartScreenState extends State<CartScreen> {
   final _couponController = TextEditingController();
   final CartService _cartService = CartService();
   final CheckoutService _checkoutService = CheckoutService();
@@ -25,20 +25,9 @@ class _CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMi
   String? _error;
 
   @override
-  bool get wantKeepAlive => false;
-
-  @override
   void initState() {
     super.initState();
     print('🛒 Cart screen initialized');
-    _loadCart();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Reload cart whenever this screen becomes visible
-    print('🛒 Cart screen dependencies changed - reloading cart');
     _loadCart();
   }
 
@@ -70,6 +59,11 @@ class _CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMi
         });
       }
     }
+  }
+  
+  // Public method to refresh cart from parent
+  void refreshCart() {
+    _loadCart();
   }
 
   Future<void> _updateQuantity(int cartItemId, int newQuantity) async {
@@ -166,7 +160,6 @@ class _CartScreenState extends State<CartScreen> with AutomaticKeepAliveClientMi
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Required for AutomaticKeepAliveClientMixin
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(

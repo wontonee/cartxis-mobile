@@ -48,8 +48,11 @@ class CheckoutService {
       print('🚚 Fetching shipping methods...');
       final response = await _apiClient.get('/api/v1/checkout/shipping-methods');
       
+      print('📦 Shipping methods response: $response');
+      
       if (response['success'] == true) {
         print('✅ Shipping methods fetched successfully');
+        print('📋 Methods data: ${response['data']}');
         return response['data'] ?? [];
       } else {
         throw Exception(response['message'] ?? 'Failed to fetch shipping methods');
@@ -64,16 +67,21 @@ class CheckoutService {
   Future<Map<String, dynamic>> setShippingMethod(String shippingMethod) async {
     try {
       print('🚚 Setting shipping method: $shippingMethod');
+      print('📦 Payload: {"shipping_method_code": "$shippingMethod"}');
       final response = await _apiClient.post(
         '/api/v1/checkout/shipping-method',
-        body: {'shipping_method': shippingMethod},
+        body: {'shipping_method_code': shippingMethod},
       );
+      
+      print('📦 Shipping method response: $response');
       
       if (response['success'] == true) {
         print('✅ Shipping method set successfully');
         return response['data'] ?? {};
       } else {
-        throw Exception(response['message'] ?? 'Failed to set shipping method');
+        final errorMsg = response['message'] ?? 'Failed to set shipping method';
+        print('❌ API Error: $errorMsg');
+        throw Exception(errorMsg);
       }
     } catch (e) {
       print('❌ Set shipping method error: $e');
@@ -105,8 +113,10 @@ class CheckoutService {
       print('💳 Setting payment method: $paymentMethod');
       final response = await _apiClient.post(
         '/api/v1/checkout/payment-method',
-        body: {'payment_method': paymentMethod},
+        body: {'payment_method_code': paymentMethod},
       );
+      
+      print('📦 Payment method response: $response');
       
       if (response['success'] == true) {
         print('✅ Payment method set successfully');
@@ -139,16 +149,37 @@ class CheckoutService {
   }
 
   /// Place order
-  Future<Map<String, dynamic>> placeOrder() async {
+  Future<Map<String, dynamic>> placeOrder({
+    required int shippingAddressId,
+    required String paymentMethod,
+    String? notes,
+  }) async {
     try {
       print('🛍️ Placing order...');
-      final response = await _apiClient.post('/api/v1/checkout/place-order');
+      print('📦 Payload: {"shipping_address_id": $shippingAddressId, "payment_method": "$paymentMethod", "notes": "${notes ?? ''}"}');
+      
+      final response = await _apiClient.post(
+        '/api/v1/checkout/place-order',
+        body: {
+          'shipping_address_id': shippingAddressId,
+          'payment_method': paymentMethod,
+          if (notes != null && notes.isNotEmpty) 'notes': notes,
+        },
+      );
+      
+      print('📦 Place order response: $response');
       
       if (response['success'] == true) {
         print('✅ Order placed successfully');
         return response['data'] ?? {};
       } else {
-        throw Exception(response['message'] ?? 'Failed to place order');
+        // Log validation errors if present
+        if (response['errors'] != null) {
+          print('❌ Validation errors: ${response['errors']}');
+        }
+        final errorMsg = response['message'] ?? 'Failed to place order';
+        final errorCode = response['error_code'] ?? 'UNKNOWN_ERROR';
+        throw Exception('$errorMsg (Code: $errorCode)');
       }
     } catch (e) {
       print('❌ Place order error: $e');

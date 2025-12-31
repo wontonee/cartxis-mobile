@@ -104,10 +104,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     // Navigate to shipping method selection screen
     if (mounted) {
+      // Get selected address data
+      final selectedAddress = _addresses.firstWhere(
+        (addr) => addr['id'] == _selectedShippingAddressId,
+        orElse: () => {},
+      );
+      
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => const ShippingScreen(),
+          builder: (_) => ShippingScreen(
+            selectedAddress: selectedAddress,
+          ),
         ),
       );
     }
@@ -123,8 +131,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final subtotal = summary['subtotal'] ?? 0.0;
     final discount = summary['discount'] ?? 0.0;
     final total = summary['total'] ?? 0.0;
-    final currency = summary['currency'] ?? 'USD';
-    final addresses = widget.checkoutData['addresses'] as List? ?? [];
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0D1B2A) : Colors.grey.shade50,

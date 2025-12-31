@@ -243,12 +243,6 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
             '\$${widget.totalAmount.toStringAsFixed(2)}',
             isDark,
           ),
-          const SizedBox(height: 16),
-          _buildDetailRow(
-            'Estimated Delivery',
-            widget.estimatedDelivery,
-            isDark,
-          ),
         ],
       ),
     );

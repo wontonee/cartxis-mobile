@@ -1,47 +1,72 @@
 import 'package:flutter/material.dart';
 import 'package:vortex_app/core/constants/app_colors.dart';
+import 'package:vortex_app/data/services/checkout_service.dart';
+import 'package:vortex_app/data/services/cart_service.dart';
 
 class ReviewScreen extends StatefulWidget {
-  const ReviewScreen({super.key});
+  final Map<String, dynamic> checkoutSummary;
+  final Map<String, dynamic> selectedAddress;
+  final Map<String, dynamic> selectedShippingMethod;
+  final Map<String, dynamic> selectedPaymentMethod;
+  
+  const ReviewScreen({
+    super.key,
+    required this.checkoutSummary,
+    required this.selectedAddress,
+    required this.selectedShippingMethod,
+    required this.selectedPaymentMethod,
+  });
 
   @override
   State<ReviewScreen> createState() => _ReviewScreenState();
 }
 
 class _ReviewScreenState extends State<ReviewScreen> {
+  final CheckoutService _checkoutService = CheckoutService();
+  final CartService _cartService = CartService();
   final TextEditingController _notesController = TextEditingController();
+  List<Map<String, dynamic>> _cartItems = [];
+  bool _isLoading = true;
+  bool _isPlacingOrder = false;
 
-  // Mock cart items data (in real app, this would come from cart state)
-  final List<Map<String, dynamic>> _cartItems = [
-    {
-      'id': 1,
-      'name': 'Nike Air Zoom Pegasus',
-      'price': 120.0,
-      'quantity': 1,
-      'size': '42',
-      'color': 'Blue',
-      'image':
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuCsihTfnBV7OnHP4e6D4WKdepftJZEEnmSaQSfx7c7frqVE37iTkhtxVZWpbpZm9_JG-xA_bt1ScMLtyPk81XjZzonPvQ0WB2uHru7GLOqSssPYK68WThzKeSlogveGxxaBq3Sb_qZuzEn-82RBd9cUBESI3eKhRgOrSvAiwu2IJtIBMrk-3UJmNpnD8qyyUrYbTt56JlQi2f4Y5hTzCpLmJVv_fW4b9Uii8M0GkphQv8lmybe524hLfSvCi2Wf43q6y6XPM4MhIe03',
-    },
-    {
-      'id': 2,
-      'name': 'Vortex Sport Bottle',
-      'price': 25.0,
-      'quantity': 2,
-      'size': '750ml',
-      'color': 'Silver',
-      'image':
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuBqFc_PF7mfE6zigeyGEx-Zq97BxhIGWEqGEPJGxrgE4mOn-sjSSA8h4d38RJTwX_CnS3RW4UNLX01mx_ym_S2aBALbLkiguOXPTuUPlnT-vlCHJT1fNxQPehEEywsgWYaYQpPfYNsLw7J0Gk3Hm7NQMQOiyWptdMU_kmSnpD3SLIUa1jHdSlA8TVx4fXqzSDxd3QjwgCBb_PCo2EGYWR63e1Jb_vvZCFaS8W-WGgbzeemYz32IB_GAZO6QmzkGryfxOFtvrMvzsBge',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadCartItems();
+  }
 
-  // Order summary values
-  final double _subtotal = 145.0;
-  final double _shipping = 10.0;
-  final double _tax = 8.5;
-  final double _discount = 15.0;
+  Future<void> _loadCartItems() async {
+    try {
+      final cartModel = await _cartService.getCart();
+      setState(() {
+        _cartItems = cartModel.items.map((item) => {
+          'product': {
+            'name': item.product.name,
+            'image_url': item.product.images.isNotEmpty 
+                ? (item.product.images[0] is String 
+                    ? item.product.images[0] 
+                    : item.product.images[0]['url'] ?? '')
+                : '',
+            'price': item.price,
+          },
+          'quantity': item.quantity,
+          'price': item.price,
+        }).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading cart: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
-  double get _total => _subtotal + _shipping + _tax - _discount;
+  double get _subtotal => (widget.checkoutSummary['subtotal'] ?? 0.0).toDouble();
+  double get _shipping => (widget.checkoutSummary['shipping_cost'] ?? 0.0).toDouble();
+  double get _tax => (widget.checkoutSummary['tax'] ?? 0.0).toDouble();
+  double get _discount => (widget.checkoutSummary['discount'] ?? 0.0).toDouble();
+  double get _total => (widget.checkoutSummary['total'] ?? 0.0).toDouble();
 
   @override
   void dispose() {
@@ -49,20 +74,67 @@ class _ReviewScreenState extends State<ReviewScreen> {
     super.dispose();
   }
 
-  void _placeOrder() {
-    // Generate order number
-    final orderNumber = '#VX-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
-    
-    // Navigate to success screen
-    Navigator.pushNamed(
-      context,
-      '/order-success',
-      arguments: {
-        'orderNumber': orderNumber,
-        'totalAmount': _total,
-        'estimatedDelivery': 'Mon, Aug 24',
-      },
-    );
+  Future<void> _placeOrder() async {
+    setState(() {
+      _isPlacingOrder = true;
+    });
+
+    try {
+      // Extract required data
+      print('🔍 selectedPaymentMethod data: ${widget.selectedPaymentMethod}');
+      
+      final shippingAddressId = widget.selectedAddress['id'] as int?;
+      final paymentMethodCode = widget.selectedPaymentMethod['code'] as String?;
+      final notes = _notesController.text.trim();
+      
+      print('📍 shippingAddressId: $shippingAddressId');
+      print('💳 paymentMethodCode: $paymentMethodCode');
+      print('📝 notes: $notes');
+      
+      if (shippingAddressId == null) {
+        throw Exception('Shipping address is required');
+      }
+      if (paymentMethodCode == null) {
+        throw Exception('Payment method is required');
+      }
+      
+      // Place the order via API
+      final result = await _checkoutService.placeOrder(
+        shippingAddressId: shippingAddressId,
+        paymentMethod: paymentMethodCode,
+        notes: notes.isNotEmpty ? notes : null,
+      );
+      
+      final orderNumber = result['order_number'] ?? '#VX-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+      
+      // Navigate to success screen
+      if (mounted) {
+        Navigator.pushNamed(
+          context,
+          '/order-success',
+          arguments: {
+            'orderNumber': orderNumber,
+            'totalAmount': _total,
+            'estimatedDelivery': 'Mon, Aug 24',
+          },
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to place order: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPlacingOrder = false;
+        });
+      }
+    }
   }
 
   @override
@@ -214,12 +286,33 @@ class _ReviewScreenState extends State<ReviewScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        ..._cartItems.map((item) => _buildCartItem(item)).toList(),
+        if (_isLoading)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(20.0),
+              child: CircularProgressIndicator(),
+            ),
+          )
+        else if (_cartItems.isEmpty)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(20.0),
+              child: Text('No items in cart'),
+            ),
+          )
+        else
+          ..._cartItems.map((item) => _buildCartItem(item)).toList(),
       ],
     );
   }
 
   Widget _buildCartItem(Map<String, dynamic> item) {
+    final product = item['product'] ?? {};
+    final productName = product['name'] ?? item['name'] ?? 'Product';
+    final productImage = product['image_url'] ?? item['image'] ?? '';
+    final quantity = item['quantity'] ?? 1;
+    final variant = item['variant'];
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -242,11 +335,17 @@ class _ReviewScreenState extends State<ReviewScreen> {
             height: 70,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
-              image: DecorationImage(
-                image: NetworkImage(item['image']),
-                fit: BoxFit.cover,
-              ),
+              color: Colors.grey[200],
+              image: productImage.isNotEmpty
+                  ? DecorationImage(
+                      image: NetworkImage(productImage),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
             ),
+            child: productImage.isEmpty
+                ? const Icon(Icons.image, color: Colors.grey)
+                : null,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -254,7 +353,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item['name'],
+                  productName,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -276,21 +375,23 @@ class _ReviewScreenState extends State<ReviewScreen> {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        'Qty: ${item['quantity']}',
+                        'Qty: $quantity',
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Size: ${item['size']} • ${item['color']}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
+                    if (variant != null) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        'Size: ${variant['size'] ?? ''} • ${variant['color'] ?? ''}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ],
@@ -328,9 +429,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Jane Doe',
-                style: TextStyle(
+              Text(
+                widget.selectedAddress['name'] ?? 'Shipping Address',
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: Colors.black,
@@ -338,7 +439,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                '123 Main St, Apt 4B\nNew York, NY 10001',
+                '${widget.selectedAddress['address'] ?? ''}\n${widget.selectedAddress['city'] ?? ''}, ${widget.selectedAddress['state'] ?? ''} ${widget.selectedAddress['postal_code'] ?? ''}',
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey[600],
@@ -367,30 +468,32 @@ class _ReviewScreenState extends State<ReviewScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Express Delivery',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.selectedShippingMethod['name'] ?? 'Standard Shipping',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Arrives by Mon, Aug 24',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
+                    const SizedBox(height: 2),
+                    Text(
+                      widget.selectedShippingMethod['description'] ?? 'Delivery information',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              const Text(
-                '\$10.00',
-                style: TextStyle(
+              Text(
+                '\$${widget.checkoutSummary['shipping_cost'].toStringAsFixed(2)}',
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: Colors.black,
@@ -414,31 +517,26 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   color: const Color(0xFFF1F1F1),
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Text(
-                  'VISA',
-                  style: TextStyle(
+                child: Text(
+                  (widget.selectedPaymentMethod['code'] ?? 'PAYMENT').toUpperCase(),
+                  style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF1A1F71),
-                    fontStyle: FontStyle.italic,
                   ),
                 ),
               ),
               const SizedBox(width: 12),
-              const Text(
-                '•••• 4242',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                'Exp 09/28',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[400],
+              Expanded(
+                child: Text(
+                  widget.selectedPaymentMethod['name'] ?? 'Selected payment method',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
@@ -695,7 +793,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
             width: double.infinity,
             height: 56,
             child: ElevatedButton(
-              onPressed: _placeOrder,
+              onPressed: _isPlacingOrder ? null : _placeOrder,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
@@ -707,31 +805,38 @@ class _ReviewScreenState extends State<ReviewScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
-                    'Place Order',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      '\$${_total.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                  if (_isPlacingOrder)
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  else
+                    Flexible(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text(
+                            'Place Order',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Text(
+                            '\$${_total.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
