@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vortex_app/core/constants/app_colors.dart';
+import 'package:vortex_app/presentation/widgets/price_text.dart';
 
 class OrderDetailScreen extends StatelessWidget {
   final String orderNumber;
@@ -424,12 +425,10 @@ class OrderDetailScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          '\$${item['price'].toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        StyledPriceText(
+                          amount: (item['price'] as num?)?.toDouble() ?? 0.0,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
                         ),
                       ],
                     ),
@@ -644,11 +643,11 @@ class OrderDetailScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          _buildSummaryRow('Subtotal', '\$135.00', isDark),
+          _buildSummaryRow('Subtotal', 135.00, isDark),
           const SizedBox(height: 12),
-          _buildSummaryRow('Shipping', '\$5.00', isDark),
+          _buildSummaryRow('Shipping', 5.00, isDark),
           const SizedBox(height: 12),
-          _buildSummaryRow('Tax (Estimated)', '\$0.00', isDark),
+          _buildSummaryRow('Tax (Estimated)', 0.00, isDark),
           const SizedBox(height: 12),
           Divider(
             height: 1,
@@ -665,13 +664,11 @@ class OrderDetailScreen extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              Text(
-                '\$${totalAmount.toStringAsFixed(2)}',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.blue.shade400 : AppColors.primary,
-                ),
+              StyledPriceText(
+                amount: totalAmount,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.blue.shade400 : AppColors.primary,
               ),
             ],
           ),
@@ -680,7 +677,7 @@ class OrderDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryRow(String label, String value, bool isDark) {
+  Widget _buildSummaryRow(String label, double amount, bool isDark) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -691,12 +688,10 @@ class OrderDetailScreen extends StatelessWidget {
             color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
           ),
         ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
+        StyledPriceText(
+          amount: amount,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
         ),
       ],
     );

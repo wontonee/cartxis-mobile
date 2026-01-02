@@ -4,6 +4,7 @@ import 'package:vortex_app/data/services/address_service.dart';
 import 'package:vortex_app/data/services/checkout_service.dart';
 import 'package:vortex_app/presentation/screens/checkout/add_address_screen.dart';
 import 'package:vortex_app/presentation/screens/checkout/shipping_screen.dart';
+import 'package:vortex_app/presentation/widgets/price_text.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final Map<String, dynamic> checkoutData;
@@ -128,9 +129,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final summary = cart['summary'] as Map<String, dynamic>? ?? {};
     final items = cart['items'] as List? ?? [];
     final itemsCount = summary['items_count'] ?? 0;
-    final subtotal = summary['subtotal'] ?? 0.0;
-    final discount = summary['discount'] ?? 0.0;
-    final total = summary['total'] ?? 0.0;
+    final subtotal = (summary['subtotal'] as num?)?.toDouble() ?? 0.0;
+    final discount = (summary['discount'] as num?)?.toDouble() ?? 0.0;
+    final total = (summary['total'] as num?)?.toDouble() ?? 0.0;
 
     return Scaffold(
       backgroundColor: isDark ? const Color(0xFF0D1B2A) : Colors.grey.shade50,
@@ -157,12 +158,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               'Order Summary',
               Column(
                 children: [
-                  _buildSummaryRow('Items', '$itemsCount', isDark),
-                  _buildSummaryRow('Subtotal', '\$$subtotal', isDark),
+                  _buildSummaryRow('Items', '$itemsCount', isDark, isItemCount: true),
+                  _buildSummaryRow('Subtotal', subtotal, isDark),
                   if (discount > 0)
-                    _buildSummaryRow('Discount', '-\$$discount', isDark, isDiscount: true),
+                    _buildSummaryRow('Discount', -discount, isDark, isDiscount: true),
                   const Divider(height: 24),
-                  _buildSummaryRow('Total', '\$$total', isDark, isBold: true),
+                  _buildSummaryRow('Total', total, isDark, isBold: true),
                 ],
               ),
             ),
@@ -176,8 +177,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 children: items.map<Widget>((item) {
                   final product = item['product'] as Map<String, dynamic>? ?? {};
                   final quantity = item['quantity'] ?? 0;
-                  final price = item['price'] ?? 0.0;
-                  final itemSubtotal = item['subtotal'] ?? 0.0;
+                  final price = (item['price'] as num?)?.toDouble() ?? 0.0;
+                  final itemSubtotal = (item['subtotal'] as num?)?.toDouble() ?? 0.0;
                   final productName = product['name'] ?? 'Unknown Product';
                   
                   return Padding(
@@ -212,22 +213,29 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 4),
-                              Text(
-                                'Qty: $quantity × \$$price',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey.shade600,
-                                ),
+                              Row(
+                                children: [
+                                  Text(
+                                    'Qty: $quantity × ',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.grey.shade600,
+                                    ),
+                                  ),
+                                  StyledPriceText(
+                                    amount: price,
+                                    fontSize: 13,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ],
                               ),
                             ],
                           ),
                         ),
-                        Text(
-                          '\$$itemSubtotal',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
-                          ),
+                        StyledPriceText(
+                          amount: itemSubtotal,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
                         ),
                       ],
                     ),
@@ -495,7 +503,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  Widget _buildSummaryRow(String label, String value, bool isDark, {bool isBold = false, bool isDiscount = false}) {
+  Widget _buildSummaryRow(String label, dynamic value, bool isDark, {bool isBold = false, bool isDiscount = false, bool isItemCount = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -509,14 +517,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               color: isDark ? Colors.white70 : Colors.black87,
             ),
           ),
-          Text(
-            value,
-            style: TextStyle(
+          if (isItemCount)
+            Text(
+              value.toString(),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+            )
+          else
+            StyledPriceText(
+              amount: value is double ? value : double.tryParse(value.toString()) ?? 0.0,
               fontSize: isBold ? 18 : 14,
               fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
               color: isDiscount ? Colors.green : (isBold ? AppColors.primary : (isDark ? Colors.white : Colors.black87)),
             ),
-          ),
         ],
       ),
     );

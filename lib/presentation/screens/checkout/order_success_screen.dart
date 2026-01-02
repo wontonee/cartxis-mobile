@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vortex_app/core/constants/app_colors.dart';
+import 'package:vortex_app/presentation/widgets/price_text.dart';
 
 class OrderSuccessScreen extends StatefulWidget {
   final String orderNumber;
@@ -238,9 +239,13 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
               height: 1,
             ),
           ),
-          _buildDetailRow(
+          _buildDetailRowWithWidget(
             'Amount Paid',
-            '\$${widget.totalAmount.toStringAsFixed(2)}',
+            StyledPriceText(
+              amount: widget.totalAmount,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
             isDark,
           ),
         ],
@@ -272,6 +277,26 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
             fontFamily: isOrderNumber ? 'monospace' : null,
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildDetailRowWithWidget(
+    String label,
+    Widget valueWidget,
+    bool isDark,
+  ) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+          ),
+        ),
+        valueWidget,
       ],
     );
   }
@@ -335,8 +360,14 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
             height: 56,
             child: OutlinedButton(
               onPressed: () {
-                // Go back to home
-                Navigator.of(context).popUntil((route) => route.isFirst);
+                // Pop all routes and return to home with refresh flag
+                Navigator.of(context).popUntil((route) {
+                  if (route.isFirst) {
+                    // Trigger cart refresh on the main screen
+                    return true;
+                  }
+                  return false;
+                });
               },
               style: OutlinedButton.styleFrom(
                 foregroundColor: isDark ? Colors.grey.shade300 : Colors.grey.shade700,

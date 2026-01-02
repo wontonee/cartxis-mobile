@@ -20,7 +20,10 @@ class CartService {
     int quantity = 1,
   }) async {
     try {
-      print('🛒 Adding to cart: Product ID $productId, Quantity: $quantity');
+      print('🛒 ===== ADD TO CART REQUEST =====');
+      print('🛒 Product ID: $productId');
+      print('🛒 Quantity: $quantity');
+      print('🛒 Payload: {"product_id": $productId, "quantity": $quantity}');
       
       final response = await _apiClient.post(
         '/api/v1/cart/add',
@@ -30,7 +33,9 @@ class CartService {
         },
       );
 
-      print('✅ Add to cart response: ${response['message']}');
+      print('✅ Add to cart API response: $response');
+      print('✅ Response data: ${response['data']}');
+      print('🛒 ================================');
       return response['success'] == true;
     } catch (e) {
       print('❌ Add to cart error: $e');

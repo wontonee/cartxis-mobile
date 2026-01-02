@@ -262,4 +262,82 @@ class AuthService {
 
     return apiResponse.data!;
   }
+
+  /// Update user profile
+  Future<UserModel> updateProfile({
+    required String firstName,
+    required String lastName,
+    String? phone,
+    String? dateOfBirth,
+    String? gender,
+  }) async {
+    final headers = await getAuthHeaders();
+    
+    if (headers == null) {
+      throw ApiException(
+        message: 'Not authenticated',
+        code: 'NOT_AUTHENTICATED',
+      );
+    }
+
+    // Combine first and last name into full name
+    final fullName = '${firstName.trim()} ${lastName.trim()}'.trim();
+
+    final body = <String, dynamic>{
+      'name': fullName,
+    };
+
+    // Only add optional fields if they have values
+    if (phone != null && phone.isNotEmpty) {
+      body['phone'] = phone;
+    }
+    if (dateOfBirth != null && dateOfBirth.isNotEmpty) {
+      body['date_of_birth'] = dateOfBirth;
+    }
+    if (gender != null && gender.isNotEmpty) {
+      body['gender'] = gender;
+    }
+
+    print('🔄 Updating profile...');
+    print('📤 Payload: $body');
+
+    final response = await _apiClient.put(
+      ApiConfig.customerProfile,
+      headers: headers,
+      body: body,
+    );
+
+    print('📥 Update profile response: ${response['message']}');
+    print('📥 Full response: $response');
+
+    // Check success first before parsing data
+    if (response['success'] == false) {
+      throw ApiException(
+        message: response['message'] ?? 'Failed to update profile',
+        code: response['error_code'] ?? 'PROFILE_UPDATE_FAILED',
+        errors: response['errors'] as Map<String, dynamic>?,
+      );
+    }
+
+    // Parse response
+    final apiResponse = ApiResponse<UserModel>.fromJson(
+      response,
+      (data) => UserModel.fromJson(data as Map<String, dynamic>),
+    );
+
+    if (!apiResponse.success || apiResponse.data == null) {
+      throw ApiException(
+        message: apiResponse.message,
+        code: apiResponse.errorCode ?? 'PROFILE_UPDATE_FAILED',
+      );
+    }
+
+    // Update stored user data
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userKey, _userToJson(apiResponse.data!));
+
+    print('✅ Profile updated successfully');
+
+    return apiResponse.data!;
+  }
 }

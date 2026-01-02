@@ -26,6 +26,7 @@ class _SearchScreenState extends State<SearchScreen> {
   List<CategoryModel> _categories = [];
   bool _isLoading = false;
   bool _showFilters = false;
+  bool _isAddingToCart = false; // Prevent duplicate add to cart calls
   
   // Filter values
   int? _selectedCategoryId;
@@ -143,6 +144,16 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Future<void> _addToCart(ProductModel product) async {
+    // Prevent duplicate calls
+    if (_isAddingToCart) {
+      print('⚠️ Add to cart already in progress, ignoring duplicate call');
+      return;
+    }
+
+    setState(() {
+      _isAddingToCart = true;
+    });
+
     try {
       // Show loading indicator
       ScaffoldMessenger.of(context).showSnackBar(
@@ -208,6 +219,13 @@ class _SearchScreenState extends State<SearchScreen> {
             duration: const Duration(seconds: 3),
           ),
         );
+      }
+    } finally {
+      // Always reset the flag after operation completes
+      if (mounted) {
+        setState(() {
+          _isAddingToCart = false;
+        });
       }
     }
   }

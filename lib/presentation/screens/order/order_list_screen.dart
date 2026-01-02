@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vortex_app/core/constants/app_colors.dart';
+import 'package:vortex_app/presentation/widgets/price_text.dart';
 
 class OrderListScreen extends StatefulWidget {
   const OrderListScreen({super.key});
@@ -395,16 +396,14 @@ class _OrderListScreenState extends State<OrderListScreen> with SingleTickerProv
                           ),
                         ),
                         const SizedBox(height: 12),
-                        Text(
-                          '\$${order['totalPrice'].toStringAsFixed(2)}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: isCancelled
-                                ? (isDark ? Colors.grey.shade500 : Colors.grey.shade500)
-                                : AppColors.primary,
-                            decoration: isCancelled ? TextDecoration.lineThrough : null,
-                          ),
+                        StyledPriceText(
+                          amount: (order['totalPrice'] as num?)?.toDouble() ?? 0.0,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: isCancelled
+                              ? (isDark ? Colors.grey.shade500 : Colors.grey.shade500)
+                              : AppColors.primary,
+                          decoration: isCancelled ? TextDecoration.lineThrough : null,
                         ),
                       ],
                     ),

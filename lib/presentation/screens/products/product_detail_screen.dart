@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vortex_app/core/constants/app_colors.dart';
+import 'package:vortex_app/presentation/widgets/price_text.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final Map<String, dynamic> product;
@@ -246,23 +247,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         const SizedBox(height: 12),
         Row(
           children: [
-            const Text(
-              '\$348.00',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary,
-              ),
+            StyledPriceText(
+              amount: 348.00,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primary,
             ),
             const SizedBox(width: 12),
-            Text(
-              '\$399.00',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey.shade400,
-                decoration: TextDecoration.lineThrough,
-                fontWeight: FontWeight.w500,
-              ),
+            StyledPriceText(
+              amount: 399.00,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey.shade400,
+              decoration: TextDecoration.lineThrough,
             ),
             const Spacer(),
             Container(
@@ -942,13 +939,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      '\$${product['price']}',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
+                    StyledPriceText(
+                      amount: double.parse(product['price'] ?? '0'),
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
                     ),
                   ],
                 ),

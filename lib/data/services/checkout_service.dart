@@ -153,10 +153,13 @@ class CheckoutService {
     required int shippingAddressId,
     required String paymentMethod,
     String? notes,
+    String? paymentId,
+    String? orderId,
+    String? signature,
   }) async {
     try {
       print('🛍️ Placing order...');
-      print('📦 Payload: {"shipping_address_id": $shippingAddressId, "payment_method": "$paymentMethod", "notes": "${notes ?? ''}"}');
+      print('📦 Payload: {"shipping_address_id": $shippingAddressId, "payment_method": "$paymentMethod", "notes": "${notes ?? ''}", "payment_id": "${paymentId ?? ''}", "order_id": "${orderId ?? ''}", "signature": "${signature ?? ''}"}');
       
       final response = await _apiClient.post(
         '/api/v1/checkout/place-order',
@@ -164,6 +167,9 @@ class CheckoutService {
           'shipping_address_id': shippingAddressId,
           'payment_method': paymentMethod,
           if (notes != null && notes.isNotEmpty) 'notes': notes,
+          if (paymentId != null) 'payment_id': paymentId,
+          if (orderId != null) 'order_id': orderId,
+          if (signature != null) 'signature': signature,
         },
       );
       

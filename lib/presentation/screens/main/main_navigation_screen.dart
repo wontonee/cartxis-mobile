@@ -14,17 +14,17 @@ class MainNavigationScreen extends StatefulWidget {
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
 }
 
-class _MainNavigationScreenState extends State<MainNavigationScreen> {
+class _MainNavigationScreenState extends State<MainNavigationScreen> with WidgetsBindingObserver {
   int _selectedIndex = 0;
   int _cartCount = 0;
   final CartService _cartService = CartService();
-  final GlobalKey<State<CartScreen>> _cartKey = GlobalKey();
+  int _cartRefreshKey = 0; // Used to force cart screen rebuild
 
   List<Widget> get _screens => [
     HomeScreen(onCartChanged: _loadCartCount),
     const CategoriesScreen(),
     CartScreen(
-      key: _cartKey,
+      key: ValueKey('cart_$_cartRefreshKey'), // Force rebuild when key changes
       onCartChanged: _loadCartCount,
       onContinueShopping: () {
         setState(() {
@@ -39,7 +39,30 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadCartCount();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Reload cart count and refresh cart when app resumes
+      _loadCartCount();
+      _refreshCart();
+    }
+  }
+
+  void _refreshCart() {
+    // Force cart screen to rebuild by changing its key
+    setState(() {
+      _cartRefreshKey++;
+    });
   }
 
   void _onTabTapped(int index) {
@@ -49,11 +72,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     
     // Reload cart when cart tab is selected
     if (index == 2) {
-      // Trigger cart reload by accessing the cart screen state
-      final cartState = _cartKey.currentState;
-      if (cartState != null) {
-        (cartState as dynamic).refreshCart();
-      }
+      _refreshCart();
+      _loadCartCount();
     }
   }
 

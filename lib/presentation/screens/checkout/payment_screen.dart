@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:vortex_app/core/constants/app_colors.dart';
 import 'package:vortex_app/data/services/checkout_service.dart';
 import 'package:vortex_app/presentation/screens/checkout/review_screen.dart';
+import 'package:vortex_app/presentation/widgets/price_text.dart';
 
 class PaymentScreen extends StatefulWidget {
   final List<dynamic> paymentMethods;
@@ -38,6 +39,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
   IconData _getIconForPaymentMethod(String iconName) {
     switch (iconName) {
       case 'credit-card':
+        return Icons.credit_card;
+      case 'stripe':
         return Icons.credit_card;
       case 'razorpay':
         return Icons.bolt;
@@ -181,13 +184,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                 : Colors.grey.shade600,
                           ),
                         ),
-                        Text(
-                          '\$${(widget.checkoutSummary?['total'] ?? 0.0).toStringAsFixed(2)}',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : const Color(0xFF0F172A),
-                          ),
+                        StyledPriceText(
+                          amount: (widget.checkoutSummary?['total'] as num?)?.toDouble() ?? 0.0,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : const Color(0xFF0F172A),
                         ),
                       ],
                     ),

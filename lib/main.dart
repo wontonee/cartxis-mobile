@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:vortex_app/app.dart';
+import 'package:vortex_app/core/utils/currency_utils.dart';
 
 void main() async {
   // Ensure Flutter binding is initialized
@@ -22,6 +23,9 @@ void main() async {
       systemNavigationBarIconBrightness: Brightness.dark,
     ),
   );
+
+  // Preload default currency
+  CurrencyUtils.preload();
 
   // Run the app
   runApp(const VortexApp());

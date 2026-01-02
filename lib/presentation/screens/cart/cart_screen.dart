@@ -4,6 +4,7 @@ import 'package:vortex_app/data/models/cart_model.dart';
 import 'package:vortex_app/data/services/cart_service.dart';
 import 'package:vortex_app/data/services/checkout_service.dart';
 import 'package:vortex_app/presentation/screens/checkout/checkout_screen.dart';
+import '../../widgets/price_text.dart';
 
 class CartScreen extends StatefulWidget {
   final VoidCallback? onCartChanged;
@@ -15,7 +16,7 @@ class CartScreen extends StatefulWidget {
   State<CartScreen> createState() => _CartScreenState();
 }
 
-class _CartScreenState extends State<CartScreen> {
+class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
   final _couponController = TextEditingController();
   final CartService _cartService = CartService();
   final CheckoutService _checkoutService = CheckoutService();
@@ -27,14 +28,31 @@ class _CartScreenState extends State<CartScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     print('🛒 Cart screen initialized');
     _loadCart();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _couponController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Reload cart when app comes to foreground
+      _loadCart();
+    }
+  }
+
+  @override
+  void didUpdateWidget(CartScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Reload cart when widget updates
+    _loadCart();
   }
 
   Future<void> _loadCart() async {
@@ -405,12 +423,10 @@ class _CartScreenState extends State<CartScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    '\$${item.price.toStringAsFixed(2)} each',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade500,
-                    ),
+                  StyledPriceText(
+                    amount: item.price,
+                    fontSize: 12,
+                    color: Colors.grey.shade500,
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -466,13 +482,11 @@ class _CartScreenState extends State<CartScreen> {
                       // Subtotal and Remove
                       Row(
                         children: [
-                          Text(
-                            '\$${item.subtotal.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
-                            ),
+                          StyledPriceText(
+                            amount: item.subtotal,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primary,
                           ),
                           IconButton(
                             icon: Icon(
@@ -523,14 +537,14 @@ class _CartScreenState extends State<CartScreen> {
           const SizedBox(height: 16),
           _buildSummaryRow(
             'Items (${_cart!.summary.itemsCount})',
-            '\$${_cart!.summary.subtotal.toStringAsFixed(2)}',
+            _cart!.summary.subtotal,
             isDark,
           ),
           if (_cart!.summary.discount > 0) ...[
             const SizedBox(height: 8),
             _buildSummaryRow(
               'Discount',
-              '-\$${_cart!.summary.discount.toStringAsFixed(2)}',
+              -_cart!.summary.discount,
               isDark,
               isDiscount: true,
             ),
@@ -539,7 +553,7 @@ class _CartScreenState extends State<CartScreen> {
             const SizedBox(height: 8),
             _buildSummaryRow(
               'Coupon (${_cart!.coupon.code})',
-              '-\$${_cart!.coupon.discountAmount.toStringAsFixed(2)}',
+              -_cart!.coupon.discountAmount,
               isDark,
               isDiscount: true,
             ),
@@ -547,7 +561,7 @@ class _CartScreenState extends State<CartScreen> {
           const Divider(height: 24),
           _buildSummaryRow(
             'Total',
-            '\$${_cart!.summary.total.toStringAsFixed(2)}',
+            _cart!.summary.total,
             isDark,
             isTotal: true,
           ),
@@ -556,7 +570,7 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _buildSummaryRow(String label, String value, bool isDark, {bool isDiscount = false, bool isTotal = false}) {
+  Widget _buildSummaryRow(String label, double amount, bool isDark, {bool isDiscount = false, bool isTotal = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -568,17 +582,15 @@ class _CartScreenState extends State<CartScreen> {
             color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
           ),
         ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: isTotal ? 18 : 14,
-            fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
-            color: isDiscount
-                ? Colors.green
-                : isTotal
-                    ? AppColors.primary
-                    : (isDark ? Colors.white : Colors.black),
-          ),
+        StyledPriceText(
+          amount: amount,
+          fontSize: isTotal ? 18 : 14,
+          fontWeight: isTotal ? FontWeight.bold : FontWeight.w600,
+          color: isDiscount
+              ? Colors.green
+              : isTotal
+                  ? AppColors.primary
+                  : (isDark ? Colors.white : Colors.black),
         ),
       ],
     );
@@ -612,13 +624,11 @@ class _CartScreenState extends State<CartScreen> {
                       color: Colors.grey.shade500,
                     ),
                   ),
-                  Text(
-                    '\$${_cart!.summary.total.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
-                    ),
+                  StyledPriceText(
+                    amount: _cart!.summary.total,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary,
                   ),
                 ],
               ),

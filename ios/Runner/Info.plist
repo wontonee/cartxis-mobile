@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>RazorpayEnvironment</key>
+	<string>production</string>
+	<key>RazorpaySuppressSDKAlerts</key>
+	<true/>
 </dict>
 </plist>

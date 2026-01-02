@@ -24,6 +24,12 @@ class ApiConfig {
   static const String authResetPassword = '/api/$apiVersion/auth/reset-password';
   static const String authVerifyEmail = '/api/$apiVersion/auth/verify-email';
   
+  // Customer Endpoints
+  static const String customerProfile = '/api/$apiVersion/customer/profile';
+  
+  // Currency Endpoints
+  static const String currencyDefault = '/api/$apiVersion/currency/default';
+  
   // Product Endpoints
   static const String products = '/api/$apiVersion/products';
   static const String productsFeatured = '/api/$apiVersion/products/featured';

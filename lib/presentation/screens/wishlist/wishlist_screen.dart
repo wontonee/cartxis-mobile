@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vortex_app/core/constants/app_colors.dart';
+import 'package:vortex_app/presentation/widgets/price_text.dart';
 
 class WishlistScreen extends StatefulWidget {
   const WishlistScreen({super.key});
@@ -550,25 +551,23 @@ class _WishlistScreenState extends State<WishlistScreen> {
                 // Price
                 Row(
                   children: [
-                    Text(
-                      '\$${item['price'].toStringAsFixed(2)}',
-                      style: TextStyle(
+                    if (item['originalPrice'] != null) ...[
+                      DiscountedPriceText(
+                        originalPrice: (item['originalPrice'] as num?)?.toDouble() ?? 0.0,
+                        discountedPrice: (item['price'] as num?)?.toDouble() ?? 0.0,
+                        fontSize: 15,
+                        discountedPriceColor: isAvailable
+                            ? AppColors.primary
+                            : (isDark ? Colors.grey.shade500 : Colors.grey.shade400),
+                      ),
+                    ] else ...[
+                      StyledPriceText(
+                        amount: (item['price'] as num?)?.toDouble() ?? 0.0,
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
                         color: isAvailable
                             ? AppColors.primary
                             : (isDark ? Colors.grey.shade500 : Colors.grey.shade400),
-                      ),
-                    ),
-                    if (item['originalPrice'] != null) ...[
-                      const SizedBox(width: 6),
-                      Text(
-                        '\$${(item['originalPrice'] as double).toStringAsFixed(2)}',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey.shade400,
-                          decoration: TextDecoration.lineThrough,
-                        ),
                       ),
                     ],
                   ],

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:vortex_app/core/constants/app_colors.dart';
+import '../../widgets/price_text.dart';
 
 class ProductListScreen extends StatefulWidget {
   final String category;
@@ -498,35 +499,18 @@ class _ProductListScreenState extends State<ProductListScreen> {
           ),
           const SizedBox(height: 2),
           if (product['originalPrice'] != null)
-            Row(
-              children: [
-                Text(
-                  '\$${product['price']}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primary,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  '\$${product['originalPrice']}',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Colors.grey.shade400,
-                    decoration: TextDecoration.lineThrough,
-                  ),
-                ),
-              ],
+            DiscountedPriceText(
+              originalPrice: double.parse(product['originalPrice'].toString()),
+              discountedPrice: double.parse(product['price'].toString()),
+              fontSize: 14,
+              discountedPriceColor: AppColors.primary,
             )
           else
-            Text(
-              '\$${product['price']}',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary,
-              ),
+            StyledPriceText(
+              amount: double.parse(product['price'].toString()),
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primary,
             ),
         ],
       ),

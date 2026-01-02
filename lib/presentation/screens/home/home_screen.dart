@@ -7,6 +7,7 @@ import 'package:vortex_app/data/services/cart_service.dart';
 import 'package:vortex_app/data/models/product_model.dart';
 import 'package:vortex_app/data/models/category_model.dart';
 import 'package:vortex_app/core/network/api_client.dart';
+import '../../widgets/price_text.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback? onCartChanged;
@@ -32,6 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoadingNew = true;
   bool _isLoadingAll = true;
   bool _isLoadingCategories = true;
+  bool _isAddingToCart = false; // Prevent duplicate add to cart calls
   
   int _currentPage = 1;
   bool _hasMore = true;
@@ -171,6 +173,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _addToCart(ProductModel product) async {
+    // Prevent duplicate calls
+    if (_isAddingToCart) {
+      print('⚠️ [${DateTime.now()}] Add to cart already in progress, ignoring duplicate call for product ${product.id}');
+      return;
+    }
+
+    print('🔵 [${DateTime.now()}] Starting add to cart for product ${product.id} - ${product.name}');
+    
+    setState(() {
+      _isAddingToCart = true;
+    });
+
     try {
       // Show loading indicator
       ScaffoldMessenger.of(context).showSnackBar(
@@ -238,6 +252,13 @@ class _HomeScreenState extends State<HomeScreen> {
             duration: const Duration(seconds: 3),
           ),
         );
+      }
+    } finally {
+      // Always reset the flag after operation completes
+      if (mounted) {
+        setState(() {
+          _isAddingToCart = false;
+        });
       }
     }
   }
@@ -719,7 +740,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         return _buildProductCard(
                           displayImageUrl,
                           product.name,
-                          '${product.currency} ${product.finalPrice.toStringAsFixed(2)}',
+                          product.finalPrice,
                           product.reviewsSummary.averageRating,
                           product.reviewsSummary.totalReviews,
                           isDark,
@@ -727,7 +748,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ? '${product.discountPercentage.toInt()}% OFF'
                               : null,
                           originalPrice: product.specialPrice != null && product.specialPrice != product.price
-                              ? '${product.currency} ${product.price.toStringAsFixed(2)}'
+                              ? product.price
                               : null,
                           product: product,
                         );
@@ -891,12 +912,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildProductCard(
     String imageUrl,
     String name,
-    String price,
+    double price,
     double rating,
     int reviews,
     bool isDark, {
     String? discount,
-    String? originalPrice,
+    double? originalPrice,
     ProductModel? product,
   }) {
     return Container(
@@ -1021,38 +1042,48 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (originalPrice != null)
-                          Text(
-                            originalPrice,
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey.shade500,
-                              decoration: TextDecoration.lineThrough,
-                            ),
+                          StyledPriceText(
+                            amount: originalPrice,
+                            fontSize: 11,
+                            color: Colors.grey.shade500,
+                            decoration: TextDecoration.lineThrough,
                           ),
-                        Text(
-                          price,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
-                          ),
+                        StyledPriceText(
+                          amount: price,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
                         ),
                       ],
                     ),
-                    GestureDetector(
-                      onTap: () => product != null ? _addToCart(product) : null,
+                    InkWell(
+                      onTap: _isAddingToCart || product == null 
+                          ? null 
+                          : () => _addToCart(product),
+                      borderRadius: BorderRadius.circular(13),
                       child: Container(
                         width: 26,
                         height: 26,
-                        decoration: const BoxDecoration(
-                          color: AppColors.primary,
+                        decoration: BoxDecoration(
+                          color: _isAddingToCart 
+                              ? AppColors.primary.withOpacity(0.5)
+                              : AppColors.primary,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
-                          Icons.add,
-                          size: 16,
-                          color: Colors.white,
-                        ),
+                        child: _isAddingToCart
+                            ? const SizedBox(
+                                width: 12,
+                                height: 12,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.add,
+                                size: 16,
+                                color: Colors.white,
+                              ),
                       ),
                     ),
                   ],

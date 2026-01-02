@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:vortex_app/core/constants/app_colors.dart';
 import 'package:vortex_app/data/services/checkout_service.dart';
 import 'package:vortex_app/data/services/cart_service.dart';
+import 'package:vortex_app/data/services/razorpay_service.dart';
+import 'package:vortex_app/data/services/stripe_service.dart';
+import 'package:vortex_app/presentation/widgets/price_text.dart';
 
 class ReviewScreen extends StatefulWidget {
   final Map<String, dynamic> checkoutSummary;
@@ -24,6 +28,8 @@ class ReviewScreen extends StatefulWidget {
 class _ReviewScreenState extends State<ReviewScreen> {
   final CheckoutService _checkoutService = CheckoutService();
   final CartService _cartService = CartService();
+  final RazorpayService _razorpayService = RazorpayService();
+  final StripeService _stripeService = StripeService();
   final TextEditingController _notesController = TextEditingController();
   List<Map<String, dynamic>> _cartItems = [];
   bool _isLoading = true;
@@ -62,15 +68,17 @@ class _ReviewScreenState extends State<ReviewScreen> {
     }
   }
 
-  double get _subtotal => (widget.checkoutSummary['subtotal'] ?? 0.0).toDouble();
-  double get _shipping => (widget.checkoutSummary['shipping_cost'] ?? 0.0).toDouble();
-  double get _tax => (widget.checkoutSummary['tax'] ?? 0.0).toDouble();
-  double get _discount => (widget.checkoutSummary['discount'] ?? 0.0).toDouble();
-  double get _total => (widget.checkoutSummary['total'] ?? 0.0).toDouble();
+  double get _subtotal => (widget.checkoutSummary['subtotal'] as num?)?.toDouble() ?? 0.0;
+  double get _shipping => (widget.checkoutSummary['shipping_cost'] as num?)?.toDouble() ?? 0.0;
+  double get _tax => (widget.checkoutSummary['tax'] as num?)?.toDouble() ?? 0.0;
+  double get _discount => (widget.checkoutSummary['discount'] as num?)?.toDouble() ?? 0.0;
+  double get _total => (widget.checkoutSummary['total'] as num?)?.toDouble() ?? 0.0;
 
   @override
   void dispose() {
     _notesController.dispose();
+    _razorpayService.dispose();
+    _stripeService.dispose();
     super.dispose();
   }
 
@@ -98,14 +106,348 @@ class _ReviewScreenState extends State<ReviewScreen> {
         throw Exception('Payment method is required');
       }
       
+      // Check if Razorpay payment
+      if (paymentMethodCode.toLowerCase() == 'razorpay') {
+        await _processRazorpayPayment(
+          shippingAddressId: shippingAddressId,
+          notes: notes.isNotEmpty ? notes : null,
+        );
+      } else if (paymentMethodCode.toLowerCase() == 'stripe') {
+        // Handle Stripe payment
+        await _processStripePayment(
+          shippingAddressId: shippingAddressId,
+          notes: notes.isNotEmpty ? notes : null,
+        );
+      } else {
+        // For other payment methods (COD, etc), place order directly
+        await _placeOrderDirect(
+          shippingAddressId: shippingAddressId,
+          paymentMethod: paymentMethodCode,
+          notes: notes.isNotEmpty ? notes : null,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to place order: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      setState(() {
+        _isPlacingOrder = false;
+      });
+    }
+  }
+
+  Future<void> _processRazorpayPayment({
+    required int shippingAddressId,
+    String? notes,
+  }) async {
+    try {
+      // First, set the payment method to get gateway configuration
+      print('💳 Setting Razorpay payment method to get gateway config...');
+      final paymentMethodData = await _checkoutService.setPaymentMethod('razorpay');
+      print('✅ Payment method data received: $paymentMethodData');
+      
+      final gatewayConfig = paymentMethodData['gateway_config'] as Map<String, dynamic>?;
+      print('🔍 gatewayConfig: $gatewayConfig');
+      
+      if (gatewayConfig == null) {
+        throw Exception('Gateway configuration not available for Razorpay');
+      }
+      
+      final razorpayKey = gatewayConfig['key_id'] as String?;
+      final businessName = gatewayConfig['name'] as String? ?? 'Vortex';
+      final themeColor = gatewayConfig['theme_color'] as String? ?? '#3399cc';
+      
+      print('🔑 Razorpay key: $razorpayKey');
+      print('🏢 Business name: $businessName');
+      print('🎨 Theme color: $themeColor');
+      
+      if (razorpayKey == null || razorpayKey.isEmpty) {
+        throw Exception('Razorpay key not found in gateway configuration');
+      }
+      
+      // Setup Razorpay callbacks
+      _razorpayService.onSuccess = (PaymentSuccessResponse response) async {
+        print('✅ Razorpay Payment Success: ${response.paymentId}');
+        
+        // Place order with payment ID
+        try {
+          final result = await _checkoutService.placeOrder(
+            shippingAddressId: shippingAddressId,
+            paymentMethod: 'razorpay',
+            notes: notes,
+            paymentId: response.paymentId,
+            orderId: response.orderId,
+            signature: response.signature,
+          );
+          
+          final orderNumber = result['order_number'] ?? '#VX-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+          
+          // Clear cart after successful order
+          await _cartService.clearCart();
+          
+          // Navigate to success screen
+          if (mounted) {
+            Navigator.pushNamed(
+              context,
+              '/order-success',
+              arguments: {
+                'orderNumber': orderNumber,
+                'totalAmount': _total,
+                'estimatedDelivery': 'Mon, Aug 24',
+              },
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Order placement failed: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        } finally {
+          if (mounted) {
+            setState(() {
+              _isPlacingOrder = false;
+            });
+          }
+        }
+      };
+
+      _razorpayService.onError = (PaymentFailureResponse response) {
+        print('❌ Razorpay Payment Error: ${response.code} - ${response.message}');
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(_razorpayService.getErrorMessage(response.code ?? 0)),
+              backgroundColor: Colors.red,
+            ),
+          );
+          setState(() {
+            _isPlacingOrder = false;
+          });
+        }
+      };
+
+      _razorpayService.onExternalWallet = (ExternalWalletResponse response) {
+        print('💳 External Wallet: ${response.walletName}');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('External wallet selected: ${response.walletName}'),
+            ),
+          );
+        }
+      };
+
+      // Open Razorpay checkout
+      final amountInPaise = (_total * 100).toInt(); // Convert to paise
+      final customerPhone = widget.selectedAddress['phone']?.toString() ?? '';
+      final customerEmail = widget.selectedAddress['email']?.toString() ?? '';
+      
+      print('💰 Opening Razorpay checkout with amount: ₹$_total (${amountInPaise} paise)');
+      
+      _razorpayService.openCheckout(
+        amount: amountInPaise,
+        key: razorpayKey,
+        name: businessName,
+        description: 'Order Payment',
+        prefillContact: customerPhone,
+        prefillEmail: customerEmail,
+        themeColor: themeColor,
+      );
+    } catch (e) {
+      print('❌ Razorpay initialization error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Payment initialization failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() {
+          _isPlacingOrder = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _processStripePayment({
+    required int shippingAddressId,
+    String? notes,
+  }) async {
+    try {
+      // First, set the payment method to get gateway configuration
+      print('💳 Setting Stripe payment method to get gateway config...');
+      final paymentMethodData = await _checkoutService.setPaymentMethod('stripe');
+      print('✅ Payment method data received: $paymentMethodData');
+      
+      final gatewayConfig = paymentMethodData['gateway_config'] as Map<String, dynamic>?;
+      print('🔍 gatewayConfig: $gatewayConfig');
+      
+      if (gatewayConfig == null) {
+        throw Exception('Gateway configuration not available for Stripe');
+      }
+      
+      // Try multiple possible key names for publishable key
+      final publishableKey = gatewayConfig['publishable_key'] as String? ?? 
+                            gatewayConfig['key'] as String? ?? 
+                            gatewayConfig['stripe_key'] as String? ??
+                            gatewayConfig['public_key'] as String?;
+      
+      // Try multiple possible key names for client secret
+      final clientSecret = gatewayConfig['client_secret'] as String? ?? 
+                          gatewayConfig['payment_intent_client_secret'] as String?;
+      
+      final merchantName = gatewayConfig['name'] as String? ?? 
+                          gatewayConfig['merchant_name'] as String? ?? 
+                          'Vortex';
+      
+      print('🔑 Stripe publishable key: ${publishableKey?.substring(0, 20)}...');
+      print('🔐 Client secret: ${clientSecret != null ? "${clientSecret.substring(0, 20)}..." : "null"}');
+      print('🏢 Merchant name: $merchantName');
+      print('📦 Full gateway config keys: ${gatewayConfig.keys.toList()}');
+      
+      if (publishableKey == null || publishableKey.isEmpty) {
+        throw Exception('Stripe publishable key not found in gateway configuration. Available keys: ${gatewayConfig.keys.join(", ")}');
+      }
+      
+      if (clientSecret == null || clientSecret.isEmpty) {
+        throw Exception('Payment intent client secret not found. Backend must create a Payment Intent and return the client_secret.');
+      }
+      
+      // Initialize Stripe with publishable key
+      await _stripeService.initialize(publishableKey);
+      
+      // Setup Stripe callbacks
+      _stripeService.onSuccess = (String paymentIntentId) async {
+        print('✅ Stripe Payment Success: $paymentIntentId');
+        
+        // Place order with payment intent ID
+        try {
+          final result = await _checkoutService.placeOrder(
+            shippingAddressId: shippingAddressId,
+            paymentMethod: 'stripe',
+            notes: notes,
+            paymentId: paymentIntentId,
+          );
+          
+          final orderNumber = result['order_number'] ?? '#VX-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+          
+          // Clear cart after successful order
+          await _cartService.clearCart();
+          
+          // Navigate to success screen
+          if (mounted) {
+            Navigator.pushNamed(
+              context,
+              '/order-success',
+              arguments: {
+                'orderNumber': orderNumber,
+                'totalAmount': _total,
+                'estimatedDelivery': 'Mon, Aug 24',
+              },
+            );
+          }
+        } catch (e) {
+          print('❌ Order placement error: $e');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Order placement failed: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        } finally {
+          if (mounted) {
+            setState(() {
+              _isPlacingOrder = false;
+            });
+          }
+        }
+      };
+
+      _stripeService.onError = (String errorMessage) {
+        print('❌ Stripe Payment Error: $errorMessage');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Payment failed: $errorMessage'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          setState(() {
+            _isPlacingOrder = false;
+          });
+        }
+      };
+
+      _stripeService.onCancelled = () {
+        print('💭 Stripe Payment Cancelled');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Payment cancelled'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          setState(() {
+            _isPlacingOrder = false;
+          });
+        }
+      };
+
+      // Present Stripe payment sheet
+      final customerEmail = widget.selectedAddress['email']?.toString();
+      
+      print('💰 Presenting Stripe payment sheet with amount: \$$_total');
+      
+      await _stripeService.presentPaymentSheet(
+        clientSecret: clientSecret,
+        merchantDisplayName: merchantName,
+        customerEmail: customerEmail,
+      );
+    } catch (e) {
+      print('❌ Stripe initialization error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Payment initialization failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        setState(() {
+          _isPlacingOrder = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _placeOrderDirect({
+    required int shippingAddressId,
+    required String paymentMethod,
+    String? notes,
+  }) async {
+    try {
       // Place the order via API
       final result = await _checkoutService.placeOrder(
         shippingAddressId: shippingAddressId,
-        paymentMethod: paymentMethodCode,
-        notes: notes.isNotEmpty ? notes : null,
+        paymentMethod: paymentMethod,
+        notes: notes,
       );
       
       final orderNumber = result['order_number'] ?? '#VX-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+      
+      // Clear cart after successful order
+      await _cartService.clearCart();
       
       // Navigate to success screen
       if (mounted) {
@@ -117,15 +459,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
             'totalAmount': _total,
             'estimatedDelivery': 'Mon, Aug 24',
           },
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to place order: $e'),
-            backgroundColor: Colors.red,
-          ),
         );
       }
     } finally {
@@ -397,13 +730,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
               ],
             ),
           ),
-          Text(
-            '\$${item['price'].toStringAsFixed(2)}',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppColors.primary,
-            ),
+          StyledPriceText(
+            amount: (item['price'] as num?)?.toDouble() ?? 0.0,
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppColors.primary,
           ),
         ],
       ),
@@ -491,13 +822,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   ],
                 ),
               ),
-              Text(
-                '\$${widget.checkoutSummary['shipping_cost'].toStringAsFixed(2)}',
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black,
-                ),
+              StyledPriceText(
+                amount: (widget.checkoutSummary['shipping_cost'] as num?)?.toDouble() ?? 0.0,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.black,
               ),
             ],
           ),
@@ -692,16 +1021,16 @@ class _ReviewScreenState extends State<ReviewScreen> {
           ),
           child: Column(
             children: [
-              _buildSummaryRow('Subtotal', '\$${_subtotal.toStringAsFixed(2)}'),
+              _buildSummaryRow('Subtotal', _subtotal),
               const SizedBox(height: 12),
-              _buildSummaryRow('Shipping', '\$${_shipping.toStringAsFixed(2)}'),
+              _buildSummaryRow('Shipping', _shipping),
               const SizedBox(height: 12),
               _buildSummaryRow(
-                  'Tax (Estimated)', '\$${_tax.toStringAsFixed(2)}'),
+                  'Tax (Estimated)', _tax),
               const SizedBox(height: 12),
               _buildSummaryRow(
                 'Discount (SummerSale)',
-                '-\$${_discount.toStringAsFixed(2)}',
+                -_discount,
                 color: const Color(0xFF10B981),
               ),
               const SizedBox(height: 16),
@@ -721,13 +1050,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
                       color: Colors.black,
                     ),
                   ),
-                  Text(
-                    '\$${_total.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
+                  StyledPriceText(
+                    amount: _total,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
                   ),
                 ],
               ),
@@ -738,7 +1065,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
     );
   }
 
-  Widget _buildSummaryRow(String label, String value, {Color? color}) {
+  Widget _buildSummaryRow(String label, double value, {Color? color}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -750,13 +1077,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
             fontWeight: color != null ? FontWeight.w500 : FontWeight.normal,
           ),
         ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: color ?? Colors.black,
-          ),
+        StyledPriceText(
+          amount: value,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: color ?? Colors.black,
         ),
       ],
     );
@@ -827,12 +1152,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
                             ),
                           ),
                           const SizedBox(width: 16),
-                          Text(
-                            '\$${_total.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          StyledPriceText(
+                            amount: _total,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
                           ),
                         ],
                       ),

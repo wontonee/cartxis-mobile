@@ -288,7 +288,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                               // Edit Profile Button
                               ElevatedButton(
-                                onPressed: () => Navigator.pushNamed(context, '/edit-profile'),
+                                onPressed: () async {
+                                  final result = await Navigator.pushNamed(context, '/edit-profile');
+                                  // Reload profile if changes were made
+                                  if (result == true && mounted) {
+                                    _loadUserProfile();
+                                  }
+                                },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.primary,
                                   foregroundColor: Colors.white,
