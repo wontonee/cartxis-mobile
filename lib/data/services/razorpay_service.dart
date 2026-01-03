@@ -15,19 +15,14 @@ class RazorpayService {
   }
 
   void _handlePaymentSuccess(PaymentSuccessResponse response) {
-    debugPrint('✅ Payment Success: ${response.paymentId}');
-    debugPrint('   Order ID: ${response.orderId}');
-    debugPrint('   Signature: ${response.signature}');
     onSuccess?.call(response);
   }
 
   void _handlePaymentError(PaymentFailureResponse response) {
-    debugPrint('❌ Payment Error: ${response.code} - ${response.message}');
     onError?.call(response);
   }
 
   void _handleExternalWallet(ExternalWalletResponse response) {
-    debugPrint('💳 External Wallet: ${response.walletName}');
     onExternalWallet?.call(response);
   }
 
@@ -72,7 +67,6 @@ class RazorpayService {
     try {
       _razorpay.open(options);
     } catch (e) {
-      debugPrint('❌ Error opening Razorpay: $e');
     }
   }
 

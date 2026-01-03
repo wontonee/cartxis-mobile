@@ -6,6 +6,7 @@ import 'package:vortex_app/data/models/product_model.dart';
 import 'package:vortex_app/data/services/category_service.dart';
 import 'package:vortex_app/data/services/search_service.dart';
 import 'package:vortex_app/data/services/cart_service.dart';
+import '../../widgets/skeleton_loader.dart';
 
 class SearchScreen extends StatefulWidget {
   final String? initialQuery;
@@ -87,7 +88,6 @@ class _SearchScreenState extends State<SearchScreen> {
         });
       }
     } catch (e) {
-      print('Error loading categories: $e');
     }
   }
 
@@ -105,7 +105,6 @@ class _SearchScreenState extends State<SearchScreen> {
     });
 
     try {
-      print('🔍 Searching for: $query');
       final results = await _searchService.searchProducts(
         query: query,
         categoryId: _selectedCategoryId,
@@ -113,16 +112,13 @@ class _SearchScreenState extends State<SearchScreen> {
         maxPrice: _maxPrice,
       );
 
-      print('✅ Found ${results.length} results');
       if (mounted) {
         setState(() {
           _searchResults = results;
           _isLoading = false;
         });
       }
-    } catch (e, stackTrace) {
-      print('❌ Search error: $e');
-      print('Stack trace: $stackTrace');
+    } catch (e) {
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -146,7 +142,6 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<void> _addToCart(ProductModel product) async {
     // Prevent duplicate calls
     if (_isAddingToCart) {
-      print('⚠️ Add to cart already in progress, ignoring duplicate call');
       return;
     }
 
@@ -584,19 +579,31 @@ class _SearchScreenState extends State<SearchScreen> {
 
     // Show loading spinner
     if (_isLoading) {
-      return Center(
+      return Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const CircularProgressIndicator(
-              color: AppColors.primary,
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12.0),
+              child: Text(
+                'Searching for "${_searchController.text}"...',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                ),
+              ),
             ),
-            const SizedBox(height: 16),
-            Text(
-              'Searching for "${_searchController.text}"...',
-              style: TextStyle(
-                fontSize: 14,
-                color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+            Expanded(
+              child: GridView.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 0.7,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                ),
+                itemCount: 6,
+                itemBuilder: (context, index) => const ProductCardSkeleton(),
               ),
             ),
           ],

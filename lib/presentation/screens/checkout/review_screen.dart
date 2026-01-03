@@ -61,7 +61,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      print('Error loading cart: $e');
       setState(() {
         _isLoading = false;
       });
@@ -89,15 +88,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
     try {
       // Extract required data
-      print('🔍 selectedPaymentMethod data: ${widget.selectedPaymentMethod}');
       
       final shippingAddressId = widget.selectedAddress['id'] as int?;
       final paymentMethodCode = widget.selectedPaymentMethod['code'] as String?;
       final notes = _notesController.text.trim();
-      
-      print('📍 shippingAddressId: $shippingAddressId');
-      print('💳 paymentMethodCode: $paymentMethodCode');
-      print('📝 notes: $notes');
       
       if (shippingAddressId == null) {
         throw Exception('Shipping address is required');
@@ -147,12 +141,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
   }) async {
     try {
       // First, set the payment method to get gateway configuration
-      print('💳 Setting Razorpay payment method to get gateway config...');
       final paymentMethodData = await _checkoutService.setPaymentMethod('razorpay');
-      print('✅ Payment method data received: $paymentMethodData');
       
       final gatewayConfig = paymentMethodData['gateway_config'] as Map<String, dynamic>?;
-      print('🔍 gatewayConfig: $gatewayConfig');
       
       if (gatewayConfig == null) {
         throw Exception('Gateway configuration not available for Razorpay');
@@ -162,17 +153,12 @@ class _ReviewScreenState extends State<ReviewScreen> {
       final businessName = gatewayConfig['name'] as String? ?? 'Vortex';
       final themeColor = gatewayConfig['theme_color'] as String? ?? '#3399cc';
       
-      print('🔑 Razorpay key: $razorpayKey');
-      print('🏢 Business name: $businessName');
-      print('🎨 Theme color: $themeColor');
-      
       if (razorpayKey == null || razorpayKey.isEmpty) {
         throw Exception('Razorpay key not found in gateway configuration');
       }
       
       // Setup Razorpay callbacks
       _razorpayService.onSuccess = (PaymentSuccessResponse response) async {
-        print('✅ Razorpay Payment Success: ${response.paymentId}');
         
         // Place order with payment ID
         try {
@@ -221,7 +207,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
       };
 
       _razorpayService.onError = (PaymentFailureResponse response) {
-        print('❌ Razorpay Payment Error: ${response.code} - ${response.message}');
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -237,7 +222,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
       };
 
       _razorpayService.onExternalWallet = (ExternalWalletResponse response) {
-        print('💳 External Wallet: ${response.walletName}');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -252,7 +236,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
       final customerPhone = widget.selectedAddress['phone']?.toString() ?? '';
       final customerEmail = widget.selectedAddress['email']?.toString() ?? '';
       
-      print('💰 Opening Razorpay checkout with amount: ₹$_total (${amountInPaise} paise)');
       
       _razorpayService.openCheckout(
         amount: amountInPaise,
@@ -264,7 +247,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
         themeColor: themeColor,
       );
     } catch (e) {
-      print('❌ Razorpay initialization error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -285,12 +267,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
   }) async {
     try {
       // First, set the payment method to get gateway configuration
-      print('💳 Setting Stripe payment method to get gateway config...');
       final paymentMethodData = await _checkoutService.setPaymentMethod('stripe');
-      print('✅ Payment method data received: $paymentMethodData');
       
       final gatewayConfig = paymentMethodData['gateway_config'] as Map<String, dynamic>?;
-      print('🔍 gatewayConfig: $gatewayConfig');
       
       if (gatewayConfig == null) {
         throw Exception('Gateway configuration not available for Stripe');
@@ -306,14 +285,13 @@ class _ReviewScreenState extends State<ReviewScreen> {
       final clientSecret = gatewayConfig['client_secret'] as String? ?? 
                           gatewayConfig['payment_intent_client_secret'] as String?;
       
+      final paymentIntentId = gatewayConfig['payment_intent_id'] as String?;
+      
       final merchantName = gatewayConfig['name'] as String? ?? 
                           gatewayConfig['merchant_name'] as String? ?? 
                           'Vortex';
       
-      print('🔑 Stripe publishable key: ${publishableKey?.substring(0, 20)}...');
-      print('🔐 Client secret: ${clientSecret != null ? "${clientSecret.substring(0, 20)}..." : "null"}');
-      print('🏢 Merchant name: $merchantName');
-      print('📦 Full gateway config keys: ${gatewayConfig.keys.toList()}');
+      final currency = gatewayConfig['currency'] as String? ?? 'USD';
       
       if (publishableKey == null || publishableKey.isEmpty) {
         throw Exception('Stripe publishable key not found in gateway configuration. Available keys: ${gatewayConfig.keys.join(", ")}');
@@ -326,9 +304,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
       // Initialize Stripe with publishable key
       await _stripeService.initialize(publishableKey);
       
+      // Small delay to ensure Stripe SDK is fully initialized
+      await Future.delayed(const Duration(milliseconds: 300));
+      
       // Setup Stripe callbacks
       _stripeService.onSuccess = (String paymentIntentId) async {
-        print('✅ Stripe Payment Success: $paymentIntentId');
         
         // Place order with payment intent ID
         try {
@@ -357,7 +337,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
             );
           }
         } catch (e) {
-          print('❌ Order placement error: $e');
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -376,7 +355,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
       };
 
       _stripeService.onError = (String errorMessage) {
-        print('❌ Stripe Payment Error: $errorMessage');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -391,7 +369,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
       };
 
       _stripeService.onCancelled = () {
-        print('💭 Stripe Payment Cancelled');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -406,17 +383,79 @@ class _ReviewScreenState extends State<ReviewScreen> {
       };
 
       // Present Stripe payment sheet
-      final customerEmail = widget.selectedAddress['email']?.toString();
+      // Get billing address from checkout summary
+      final billingAddressData = widget.checkoutSummary['billing_address'];
       
-      print('💰 Presenting Stripe payment sheet with amount: \$$_total');
+      // Determine which address to use for billing
+      Map<String, dynamic> addressToUse;
+      
+      if (billingAddressData is Map<String, dynamic>) {
+        // Check if it's a flag indicating to use shipping address
+        final useShippingAddress = billingAddressData['use_shipping_address'] == true;
+        
+        // Check if billing address has street address (try both field name formats)
+        final hasAddress = (billingAddressData['address1']?.toString() ?? 
+                           billingAddressData['address_line1']?.toString() ?? 
+                           billingAddressData['address_line_1']?.toString() ?? '').isNotEmpty;
+        
+        if (useShippingAddress || !hasAddress) {
+          // Backend says to use shipping address OR billing address is incomplete
+          addressToUse = widget.selectedAddress;
+        } else {
+          // Use the billing address from checkout summary
+          addressToUse = billingAddressData;
+        }
+      } else {
+        // No billing address in summary, use shipping address
+        addressToUse = widget.selectedAddress;
+      }
+      
+      // Map the address fields - API uses different field names (address1, address_line1, or address_line_1)
+      final customerEmail = addressToUse['email']?.toString() ?? widget.selectedAddress['email']?.toString();
+      final customerName = (addressToUse['full_name']?.toString() ?? 
+                           '${addressToUse['first_name'] ?? ''} ${addressToUse['last_name'] ?? ''}'.trim());
+      final customerPhone = addressToUse['phone']?.toString();
+      final addressLine1 = addressToUse['address1']?.toString() ?? 
+                          addressToUse['address_line1']?.toString() ?? 
+                          addressToUse['address_line_1']?.toString();
+      final addressLine2 = addressToUse['address2']?.toString() ?? 
+                          addressToUse['address_line2']?.toString() ?? 
+                          addressToUse['address_line_2']?.toString();
+      final city = addressToUse['city']?.toString();
+      final state = addressToUse['state']?.toString();
+      final postalCode = addressToUse['zip_code']?.toString() ?? 
+                        addressToUse['postal_code']?.toString() ?? 
+                        addressToUse['zipcode']?.toString();
+      final country = addressToUse['country']?.toString() ?? 'IN';
+      
+      // Validate required fields for Indian regulations
+      if (customerName.isEmpty) {
+        throw Exception('Customer name is required. Please update your address.');
+      }
+      if (addressLine1 == null || addressLine1.isEmpty) {
+        throw Exception('Street address is required. Please update your address with complete street address.');
+      }
+      if (city == null || city.isEmpty) {
+        throw Exception('City is required. Please update your address.');
+      }
+      if (postalCode == null || postalCode.isEmpty) {
+        throw Exception('Postal/ZIP code is required. Please update your address with postal code.');
+      }
       
       await _stripeService.presentPaymentSheet(
         clientSecret: clientSecret,
         merchantDisplayName: merchantName,
         customerEmail: customerEmail,
+        customerName: customerName,
+        phone: customerPhone,
+        addressLine1: addressLine1,
+        addressLine2: addressLine2,
+        city: city,
+        state: state,
+        postalCode: postalCode,
+        country: country,
       );
     } catch (e) {
-      print('❌ Stripe initialization error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

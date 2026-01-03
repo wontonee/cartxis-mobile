@@ -30,7 +30,6 @@ class CurrencyService {
       }
 
       // Fetch from API
-      print('🌍 Fetching default currency from API...');
       final response = await _apiClient.get(ApiConfig.currencyDefault);
 
       if (response['success'] == false) {
@@ -59,22 +58,18 @@ class CurrencyService {
       await _cacheCurrency(currency);
       _cachedCurrency = currency;
 
-      print('✅ Default currency loaded: ${currency.code} (${currency.symbol})');
 
       return currency;
     } catch (e) {
-      print('❌ Error fetching default currency: $e');
       
       // Try to return cached currency as fallback
       final cachedCurrency = await _getCachedCurrency();
       if (cachedCurrency != null) {
-        print('📦 Using cached currency as fallback');
         _cachedCurrency = cachedCurrency;
         return cachedCurrency;
       }
 
       // If all else fails, return a default currency
-      print('⚠️ Using hardcoded fallback currency');
       return _getHardcodedFallback();
     }
   }
@@ -84,9 +79,7 @@ class CurrencyService {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_currencyKey, jsonEncode(currency.toJson()));
-      print('💾 Currency cached successfully');
     } catch (e) {
-      print('⚠️ Failed to cache currency: $e');
     }
   }
 
@@ -101,7 +94,6 @@ class CurrencyService {
         return CurrencyModel.fromJson(data);
       }
     } catch (e) {
-      print('⚠️ Failed to get cached currency: $e');
     }
     return null;
   }
@@ -112,9 +104,7 @@ class CurrencyService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_currencyKey);
       _cachedCurrency = null;
-      print('🗑️ Currency cache cleared');
     } catch (e) {
-      print('⚠️ Failed to clear currency cache: $e');
     }
   }
 

@@ -39,17 +39,12 @@ class SearchService {
         queryParams['max_price'] = maxPrice.toString();
       }
 
-      print('🔍 Search params: $queryParams');
 
       final response = await _apiClient.get(
         '/api/v1/search',
         queryParameters: queryParams,
       );
 
-      print('📦 Raw response type: ${response.runtimeType}');
-      print('📦 Search response success: ${response['success']}');
-      print('📦 Search response message: ${response['message']}');
-      print('📦 Search response data type: ${response['data']?.runtimeType}');
 
       // Check success first before parsing data
       if (response['success'] == false) {
@@ -62,24 +57,19 @@ class SearchService {
 
       // Parse the data array
       if (response['data'] == null) {
-        print('⚠️ No data in response');
         return [];
       }
 
       final List<dynamic> dataList = response['data'] as List<dynamic>;
-      print('✅ Parsing ${dataList.length} products');
       
       return dataList.map((json) {
         try {
           return ProductModel.fromJson(json as Map<String, dynamic>);
         } catch (e) {
-          print('❌ Error parsing product: $e');
-          print('Product JSON: $json');
           rethrow;
         }
       }).toList();
     } catch (e) {
-      print('❌ Search service error: $e');
       rethrow;
     }
   }

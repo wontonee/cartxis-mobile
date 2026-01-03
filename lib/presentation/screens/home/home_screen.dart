@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:vortex_app/core/constants/app_colors.dart';
-import 'package:vortex_app/core/constants/app_sizes.dart';
 import 'package:vortex_app/data/services/product_service.dart';
 import 'package:vortex_app/data/services/category_service.dart';
 import 'package:vortex_app/data/services/cart_service.dart';
 import 'package:vortex_app/data/models/product_model.dart';
 import 'package:vortex_app/data/models/category_model.dart';
-import 'package:vortex_app/core/network/api_client.dart';
 import '../../widgets/price_text.dart';
+import '../../widgets/skeleton_loader.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback? onCartChanged;
@@ -67,9 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _isLoadingCategories = false;
         });
       }
-    } catch (e, stackTrace) {
-      print('Error loading categories: $e');
-      print('Stack trace: $stackTrace');
+    } catch (e) {
       if (mounted) {
         setState(() {
           _isLoadingCategories = false;
@@ -94,9 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _isLoadingFeatured = false;
         });
       }
-    } catch (e, stackTrace) {
-      print('Error loading featured products: $e');
-      print('Stack trace: $stackTrace');
+    } catch (e) {
       if (mounted) {
         setState(() {
           _isLoadingFeatured = false;
@@ -127,7 +122,6 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _isLoadingNew = false;
         });
-        print('Error loading new products: $e');
       }
     }
   }
@@ -161,7 +155,6 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _isLoadingAll = false;
         });
-        print('Error loading products: $e');
       }
     }
   }
@@ -175,11 +168,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _addToCart(ProductModel product) async {
     // Prevent duplicate calls
     if (_isAddingToCart) {
-      print('⚠️ [${DateTime.now()}] Add to cart already in progress, ignoring duplicate call for product ${product.id}');
       return;
     }
-
-    print('🔵 [${DateTime.now()}] Starting add to cart for product ${product.id} - ${product.name}');
     
     setState(() {
       _isAddingToCart = true;
@@ -578,16 +568,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildCategoryChips(bool isDark) {
     if (_isLoadingCategories) {
       return SizedBox(
-        height: 36,
-        child: Center(
-          child: SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: AppColors.primary,
-            ),
-          ),
+        height: 70,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          itemCount: 5,
+          itemBuilder: (context, index) => const CategoryCardSkeleton(),
         ),
       );
     }
@@ -705,8 +691,11 @@ class _HomeScreenState extends State<HomeScreen> {
         SizedBox(
           height: 290,
           child: _isLoadingFeatured
-              ? const Center(
-                  child: CircularProgressIndicator(),
+              ? ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: 3,
+                  itemBuilder: (context, index) => const ProductCardSkeleton(),
                 )
               : _featuredProducts.isEmpty
                   ? Center(
@@ -875,8 +864,11 @@ class _HomeScreenState extends State<HomeScreen> {
         SizedBox(
           height: 270,
           child: _isLoadingNew
-              ? const Center(
-                  child: CircularProgressIndicator(),
+              ? ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: 3,
+                  itemBuilder: (context, index) => const ProductCardSkeleton(),
                 )
               : _newProducts.isEmpty
                   ? Center(

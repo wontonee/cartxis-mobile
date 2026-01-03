@@ -20,6 +20,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final CheckoutService _checkoutService = CheckoutService();
   List<dynamic> _addresses = [];
   int? _selectedShippingAddressId;
+  int? _selectedBillingAddressId;
+  bool _useShippingAddressForBilling = false;
   bool _isLoadingAddresses = true;
   bool _isSavingAddress = false;
 
@@ -31,11 +33,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   Future<void> _fetchAddresses() async {
     try {
-      print('🔄 Fetching addresses...');
       setState(() => _isLoadingAddresses = true);
       final addresses = await _addressService.getAddresses();
-      print('✅ Addresses fetched: ${addresses.length} addresses');
-      print('📦 Addresses data: $addresses');
       setState(() {
         _addresses = addresses;
         // Auto-select default shipping address
@@ -45,14 +44,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         );
         if (defaultAddress != null) {
           _selectedShippingAddressId = defaultAddress['id'];
-          print('✅ Default address selected: ${defaultAddress['id']}');
         }
         _isLoadingAddresses = false;
       });
-      print('✅ State updated, loading = false');
     } catch (e, stackTrace) {
-      print('❌ Fetch addresses error: $e');
-      print('❌ Stack trace: $stackTrace');
       setState(() => _isLoadingAddresses = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -65,7 +60,41 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Future<void> _selectShippingAddress(int addressId) async {
     try {
       setState(() => _isSavingAddress = true);
-      await _checkoutService.setShippingAddress(addressId);
+      
+      // Find the selected address from the list
+      final selectedAddr = _addresses.firstWhere(
+        (addr) => addr['id'] == addressId,
+        orElse: () => throw Exception('Address not found'),
+      );
+      
+      // Extract address details with field name mapping
+      final firstName = selectedAddr['first_name']?.toString() ?? '';
+      final lastName = selectedAddr['last_name']?.toString() ?? '';
+      final phone = selectedAddr['phone']?.toString() ?? '';
+      final addressLine1 = selectedAddr['address1']?.toString() ?? 
+                          selectedAddr['address_line1']?.toString() ?? 
+                          selectedAddr['address_line_1']?.toString() ?? '';
+      final addressLine2 = selectedAddr['address2']?.toString() ?? 
+                          selectedAddr['address_line2']?.toString() ?? 
+                          selectedAddr['address_line_2']?.toString();
+      final city = selectedAddr['city']?.toString() ?? '';
+      final state = selectedAddr['state']?.toString() ?? '';
+      final postalCode = selectedAddr['zip_code']?.toString() ?? 
+                        selectedAddr['postal_code']?.toString() ?? '';
+      final country = selectedAddr['country']?.toString() ?? 'IN';
+      
+      await _checkoutService.setShippingAddress(
+        firstName: firstName,
+        lastName: lastName,
+        phone: phone,
+        addressLine1: addressLine1,
+        addressLine2: addressLine2,
+        city: city,
+        state: state,
+        postalCode: postalCode,
+        country: country,
+      );
+      
       setState(() {
         _selectedShippingAddressId = addressId;
         _isSavingAddress = false;
@@ -85,6 +114,50 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to save address: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _selectBillingAddress(int addressId) async {
+    await _setBillingAddress(addressId: addressId);
+  }
+
+  Future<void> _setBillingAddress({
+    int? addressId,
+    bool useShippingAddress = false,
+  }) async {
+    try {
+      setState(() => _isSavingAddress = true);
+      await _checkoutService.setBillingAddress(
+        addressId: useShippingAddress ? _selectedShippingAddressId : addressId,
+        useShippingAddress: useShippingAddress,
+      );
+      setState(() {
+        if (!useShippingAddress) {
+          _selectedBillingAddressId = addressId;
+        }
+        _isSavingAddress = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(useShippingAddress 
+              ? 'Using shipping address for billing'
+              : 'Billing address saved'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() => _isSavingAddress = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to set billing address: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -139,7 +212,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         backgroundColor: isDark ? const Color(0xFF1A2633) : Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -400,32 +473,146 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             _buildSection(
               isDark,
               'Billing Address',
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                child: Center(
-                  child: Column(
-                    children: [
-                      Icon(Icons.receipt_long_outlined, size: 48, color: Colors.grey.shade400),
-                      const SizedBox(height: 8),
-                      Text(
-                        'No billing address added',
-                        style: TextStyle(color: Colors.grey.shade600),
+              _isLoadingAddresses
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(16),
+                        child: CircularProgressIndicator(),
                       ),
-                      const SizedBox(height: 16),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          // TODO: Navigate to add billing address screen
-                        },
-                        icon: const Icon(Icons.add),
-                        label: const Text('Add Billing Address'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
+                    )
+                  : Column(
+                      children: [
+                        // Option to use shipping address
+                        CheckboxListTile(
+                          value: _useShippingAddressForBilling,
+                          onChanged: (value) async {
+                            if (value == true && _selectedShippingAddressId == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Please select shipping address first'),
+                                  backgroundColor: Colors.orange,
+                                ),
+                              );
+                              return;
+                            }
+                            
+                            setState(() {
+                              _useShippingAddressForBilling = value ?? false;
+                              if (value == true) {
+                                _selectedBillingAddressId = null;
+                              }
+                            });
+                            
+                            if (value == true) {
+                              await _setBillingAddress(useShippingAddress: true);
+                            }
+                          },
+                          title: const Text('Same as shipping address'),
+                          contentPadding: EdgeInsets.zero,
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+                        
+                        if (!_useShippingAddressForBilling) ...[
+                          const SizedBox(height: 8),
+                          if (_addresses.isEmpty)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: Column(
+                                children: [
+                                  Icon(Icons.receipt_long_outlined, size: 48, color: Colors.grey.shade400),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'No billing address added',
+                                    style: TextStyle(color: Colors.grey.shade600),
+                                  ),
+                                ],
+                              ),
+                            )
+                          else
+                            ..._addresses.map<Widget>((address) {
+                              final isSelected = _selectedBillingAddressId == address['id'];
+                              return GestureDetector(
+                                onTap: _isSavingAddress ? null : () {
+                                  _selectBillingAddress(address['id']);
+                                },
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? const Color(0xFF1A2633) : Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: isSelected ? AppColors.primary : Colors.grey.shade300,
+                                      width: isSelected ? 2 : 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                                        color: isSelected ? AppColors.primary : Colors.grey,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              '${address['first_name'] ?? ''} ${address['last_name'] ?? ''}'.trim(),
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              address['address_line1'] ?? '',
+                                              style: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
+                                            ),
+                                            if (address['address_line2'] != null && address['address_line2'].toString().isNotEmpty)
+                                              Text(
+                                                address['address_line2'],
+                                                style: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
+                                              ),
+                                            Text(
+                                              '${address['city'] ?? ''}, ${address['state'] ?? ''} ${address['postal_code'] ?? ''}',
+                                              style: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
+                                            ),
+                                            if (address['phone'] != null)
+                                              Text(
+                                                'Phone: ${address['phone']}',
+                                                style: TextStyle(color: isDark ? Colors.white60 : Colors.black54, fontSize: 12),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }),
+                          const SizedBox(height: 8),
+                          ElevatedButton.icon(
+                            onPressed: () async {
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const AddAddressScreen(),
+                                ),
+                              );
+                              if (result == true) {
+                                _fetchAddresses();
+                              }
+                            },
+                            icon: const Icon(Icons.add),
+                            label: const Text('Add Billing Address'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
             ),
             const SizedBox(height: 80),
           ],
@@ -445,7 +632,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         ),
         child: SafeArea(
           child: ElevatedButton(
-            onPressed: _selectedShippingAddressId == null 
+            onPressed: (_selectedShippingAddressId == null || 
+                       (!_useShippingAddressForBilling && _selectedBillingAddressId == null))
               ? null 
               : () {
                   _proceedToShipping();

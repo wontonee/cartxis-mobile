@@ -68,12 +68,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       final user = await _authService.getProfile();
       
-      print('👤 Loaded user profile:');
-      print('   Name: ${user.name}');
-      print('   Email: ${user.email}');
-      print('   Phone: ${user.phone}');
-      print('   DOB: ${user.dateOfBirth}');
-      
       if (mounted) {
         setState(() {
           _user = user;
@@ -92,7 +86,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             try {
               _selectedDate = DateTime.parse(user.dateOfBirth!);
             } catch (e) {
-              print('⚠️ Failed to parse date: ${user.dateOfBirth}');
             }
           }
           

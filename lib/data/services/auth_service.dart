@@ -108,9 +108,7 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     
     // Save token
-    print('💾 Saving auth token: ${loginData.token.substring(0, 20)}...');
     await prefs.setString(_tokenKey, loginData.token);
-    print('✅ Token saved successfully');
     
     // Save user data as JSON string
     await prefs.setString(_userKey, _userToJson(loginData.user));
@@ -298,8 +296,6 @@ class AuthService {
       body['gender'] = gender;
     }
 
-    print('🔄 Updating profile...');
-    print('📤 Payload: $body');
 
     final response = await _apiClient.put(
       ApiConfig.customerProfile,
@@ -307,8 +303,6 @@ class AuthService {
       body: body,
     );
 
-    print('📥 Update profile response: ${response['message']}');
-    print('📥 Full response: $response');
 
     // Check success first before parsing data
     if (response['success'] == false) {
@@ -336,7 +330,6 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_userKey, _userToJson(apiResponse.data!));
 
-    print('✅ Profile updated successfully');
 
     return apiResponse.data!;
   }

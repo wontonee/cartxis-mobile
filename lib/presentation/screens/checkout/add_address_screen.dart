@@ -4,7 +4,9 @@ import 'package:vortex_app/core/network/api_exception.dart';
 import 'package:vortex_app/data/services/address_service.dart';
 
 class AddAddressScreen extends StatefulWidget {
-  const AddAddressScreen({super.key});
+  final Map<String, dynamic>? address;
+  
+  const AddAddressScreen({super.key, this.address});
 
   @override
   State<AddAddressScreen> createState() => _AddAddressScreenState();
@@ -21,9 +23,20 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   final _zipCodeController = TextEditingController();
   final _phoneController = TextEditingController();
   String? _selectedCountry;
+  String? _selectedLabel;
   bool _isDefault = false;
+  bool _isDefaultShipping = false;
+  bool _isDefaultBilling = false;
   bool _isLoading = false;
   final AddressService _addressService = AddressService();
+
+  // Address label options
+  final List<String> _addressLabels = [
+    'Home',
+    'Office',
+    'Work',
+    'Other',
+  ];
 
   // Common countries with their codes
   final Map<String, String> _countries = {
@@ -50,6 +63,31 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   };
 
   @override
+  void initState() {
+    super.initState();
+    _populateFields();
+  }
+
+  void _populateFields() {
+    if (widget.address != null) {
+      final addr = widget.address!;
+      _firstNameController.text = addr['first_name'] ?? '';
+      _lastNameController.text = addr['last_name'] ?? '';
+      _address1Controller.text = addr['address1'] ?? addr['address_line_1'] ?? '';
+      _address2Controller.text = addr['address2'] ?? addr['address_line_2'] ?? '';
+      _cityController.text = addr['city'] ?? '';
+      _stateController.text = addr['state'] ?? '';
+      _zipCodeController.text = addr['zip_code'] ?? addr['postal_code'] ?? '';
+      _phoneController.text = addr['phone'] ?? '';
+      _selectedCountry = addr['country'];
+      _selectedLabel = addr['label'];
+      _isDefault = addr['is_default'] == true;
+      _isDefaultShipping = addr['is_default_shipping'] == true;
+      _isDefaultBilling = addr['is_default_billing'] == true;
+    }
+  }
+
+  @override
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
@@ -70,24 +108,50 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final address = await _addressService.addAddress(
-        firstName: _firstNameController.text.trim(),
-        lastName: _lastNameController.text.trim(),
-        addressLine1: _address1Controller.text.trim(),
-        zipCode: _zipCodeController.text.trim(),
-        addressLine2: _address2Controller.text.trim().isEmpty ? null : _address2Controller.text.trim(),
-        city: _cityController.text.trim().isEmpty ? null : _cityController.text.trim(),
-        state: _stateController.text.trim().isEmpty ? null : _stateController.text.trim(),
-        country: _selectedCountry,
-        phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
-        isDefault: _isDefault,
-      );
+      final Map<String, dynamic> address;
+      
+      if (widget.address != null) {
+        // Update existing address
+        address = await _addressService.updateAddress(
+          addressId: widget.address!['id'] as int,
+          firstName: _firstNameController.text.trim(),
+          lastName: _lastNameController.text.trim(),
+          addressLine1: _address1Controller.text.trim(),
+          zipCode: _zipCodeController.text.trim(),
+          addressLine2: _address2Controller.text.trim().isEmpty ? null : _address2Controller.text.trim(),
+          city: _cityController.text.trim().isEmpty ? null : _cityController.text.trim(),
+          state: _stateController.text.trim().isEmpty ? null : _stateController.text.trim(),
+          country: _selectedCountry,
+          phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
+          label: _selectedLabel,
+          isDefault: _isDefault,
+          isDefaultShipping: _isDefaultShipping,
+          isDefaultBilling: _isDefaultBilling,
+        );
+      } else {
+        // Add new address
+        address = await _addressService.addAddress(
+          firstName: _firstNameController.text.trim(),
+          lastName: _lastNameController.text.trim(),
+          addressLine1: _address1Controller.text.trim(),
+          zipCode: _zipCodeController.text.trim(),
+          addressLine2: _address2Controller.text.trim().isEmpty ? null : _address2Controller.text.trim(),
+          city: _cityController.text.trim().isEmpty ? null : _cityController.text.trim(),
+          state: _stateController.text.trim().isEmpty ? null : _stateController.text.trim(),
+          country: _selectedCountry,
+          phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
+          label: _selectedLabel,
+          isDefault: _isDefault,
+          isDefaultShipping: _isDefaultShipping,
+          isDefaultBilling: _isDefaultBilling,
+        );
+      }
 
       if (mounted) {
         Navigator.pop(context, address);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Address added successfully'),
+          SnackBar(
+            content: Text(widget.address != null ? 'Address updated successfully' : 'Address added successfully'),
             backgroundColor: Colors.green,
           ),
         );
@@ -146,9 +210,9 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Add Address',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          widget.address != null ? 'Edit Address' : 'Add Address',
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
       body: Form(
@@ -285,7 +349,45 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Set as default
+            // Address Label Dropdown
+            Container(
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1A2633) : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDark ? Colors.grey.shade800 : Colors.grey.shade300,
+                ),
+              ),
+              child: DropdownButtonFormField<String>(
+                value: _selectedLabel,
+                decoration: InputDecoration(
+                  labelText: 'Address Label',
+                  hintText: 'Select label (Home, Office, etc.)',
+                  prefixIcon: Icon(
+                    Icons.label_outline,
+                    color: isDark ? Colors.white70 : Colors.grey,
+                  ),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                ),
+                dropdownColor: isDark ? const Color(0xFF1A2633) : Colors.white,
+                style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+                items: _addressLabels.map((label) {
+                  return DropdownMenuItem<String>(
+                    value: label,
+                    child: Text(label),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedLabel = value;
+                  });
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Default Address Options
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -295,28 +397,87 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                   color: isDark ? Colors.grey.shade800 : Colors.grey.shade300,
                 ),
               ),
-              child: Row(
+              child: Column(
                 children: [
-                  Icon(
-                    Icons.star_outline,
-                    color: isDark ? Colors.white70 : Colors.black54,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Set as default address',
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: isDark ? Colors.white : Colors.black87,
+                  // Set as default
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.star_outline,
+                        color: isDark ? Colors.white70 : Colors.black54,
                       ),
-                    ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Set as default address',
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                      ),
+                      Switch(
+                        value: _isDefault,
+                        onChanged: (value) {
+                          setState(() => _isDefault = value);
+                        },
+                        activeColor: AppColors.primary,
+                      ),
+                    ],
                   ),
-                  Switch(
-                    value: _isDefault,
-                    onChanged: (value) {
-                      setState(() => _isDefault = value);
-                    },
-                    activeColor: AppColors.primary,
+                  const SizedBox(height: 12),
+                  // Set as default shipping
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.local_shipping_outlined,
+                        color: isDark ? Colors.white70 : Colors.black54,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Set as default shipping address',
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                      ),
+                      Switch(
+                        value: _isDefaultShipping,
+                        onChanged: (value) {
+                          setState(() => _isDefaultShipping = value);
+                        },
+                        activeColor: AppColors.primary,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Set as default billing
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.receipt_long_outlined,
+                        color: isDark ? Colors.white70 : Colors.black54,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Set as default billing address',
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                      ),
+                      Switch(
+                        value: _isDefaultBilling,
+                        onChanged: (value) {
+                          setState(() => _isDefaultBilling = value);
+                        },
+                        activeColor: AppColors.primary,
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -342,9 +503,9 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
-                  : const Text(
-                      'Save Address',
-                      style: TextStyle(
+                  : Text(
+                      widget.address != null ? 'Update Address' : 'Save Address',
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),

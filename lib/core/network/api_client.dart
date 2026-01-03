@@ -184,13 +184,10 @@ class ApiClient {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('auth_token');
-      print('🔐 Auth token from storage: ${token != null ? "${token.substring(0, 20)}..." : "NO TOKEN FOUND"}');
       if (token != null && token.isNotEmpty) {
         defaultHeaders['Authorization'] = 'Bearer $token';
-        print('✅ Authorization header added');
       }
     } catch (e) {
-      print('❌ Error getting auth token: $e');
     }
 
     if (headers != null) {
@@ -205,16 +202,12 @@ class ApiClient {
     final statusCode = response.statusCode;
     final body = response.body;
 
-    print('🌐 Response Status Code: $statusCode');
-    print('🌐 Response Body (first 500 chars): ${body.substring(0, body.length > 500 ? 500 : body.length)}');
 
     // Try to parse response body
     Map<String, dynamic> responseData;
     try {
       responseData = jsonDecode(body) as Map<String, dynamic>;
     } catch (e) {
-      print('❌ JSON Parse Error: $e');
-      print('❌ Full Response Body: $body');
       throw ApiException(
         message: 'Failed to parse response',
         code: 'PARSE_ERROR',

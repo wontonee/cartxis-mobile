@@ -77,7 +77,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             try {
               _selectedDate = DateTime.parse(user.dateOfBirth!);
             } catch (e) {
-              print('⚠️ Failed to parse date: ${user.dateOfBirth}');
             }
           }
           

@@ -29,7 +29,7 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    print('🛒 Cart screen initialized');
+
     _loadCart();
   }
 
@@ -86,8 +86,6 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
 
   Future<void> _updateQuantity(int cartItemId, int newQuantity) async {
     if (newQuantity < 1) return;
-
-    print('🔄 Updating cart item ID: $cartItemId to quantity: $newQuantity');
 
     try {
       await _cartService.updateCartItem(

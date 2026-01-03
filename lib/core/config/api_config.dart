@@ -6,7 +6,9 @@ class ApiConfig {
   static const bool isProduction = false; // Change to true for production
   
   // Base URLs
-  static const String testBaseUrl = 'https://vortex.test';
+  // Use 10.0.2.2 for Android emulator to access host machine's localhost
+  // Use your actual local IP (e.g., 192.168.x.x) for physical devices
+  static const String testBaseUrl = 'http://192.168.1.13:8000'; // Android emulator special IP
   static const String productionBaseUrl = 'https://api.vortex.com'; // Update with actual production URL
   
   // Current Base URL based on environment

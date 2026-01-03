@@ -117,15 +117,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             }
             
             // Debug: Print error details
-            print('ApiException caught!');
-            print('Register Error - Code: ${e.code}, Status: ${e.statusCode}');
-            print('Message: ${e.message}');
-            print('Errors: ${e.errors}');
           } else {
-            print('Exception type: ${e.runtimeType}');
-            print('Is ApiException: ${e is ApiException}');
-            errorMessage = e.toString();
-            print('Non-ApiException Error: $e');
           }
           
           ScaffoldMessenger.of(context).showSnackBar(

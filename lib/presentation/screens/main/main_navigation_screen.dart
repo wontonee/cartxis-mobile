@@ -86,7 +86,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
         });
       }
     } catch (e) {
-      print('Error loading cart count: $e');
     }
   }
 

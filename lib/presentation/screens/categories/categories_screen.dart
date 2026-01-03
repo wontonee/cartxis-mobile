@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:vortex_app/core/constants/app_colors.dart';
 import 'package:vortex_app/data/models/category_model.dart';
 import 'package:vortex_app/data/services/category_service.dart';
+import '../../widgets/skeleton_loader.dart';
 
 class CategoriesScreen extends StatefulWidget {
   const CategoriesScreen({super.key});
@@ -25,20 +26,15 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
   Future<void> _loadCategories() async {
     try {
-      print('📱 Categories Screen: Starting to load categories...');
       final categories = await _categoryService.getCategories();
-      print('📱 Categories Screen: Loaded ${categories.length} categories');
       
       if (mounted) {
         setState(() {
           _categories = categories;
           _isLoading = false;
         });
-        print('📱 Categories Screen: Updated state with categories');
       }
-    } catch (e, stackTrace) {
-      print('❌ Categories Screen Error: $e');
-      print('Stack trace: $stackTrace');
+    } catch (e) {
       
       if (mounted) {
         setState(() {
@@ -74,9 +70,17 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           _buildTopBar(isDark),
           Expanded(
             child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.primary,
+                ? Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: GridView.builder(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        childAspectRatio: 0.85,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                      ),
+                      itemCount: 9,
+                      itemBuilder: (context, index) => const CategoryCardSkeleton(),
                     ),
                   )
                 : SingleChildScrollView(

@@ -49,7 +49,6 @@ class CurrencyUtils {
     try {
       await _currencyService.getDefaultCurrency();
     } catch (e) {
-      print('⚠️ Failed to preload currency: $e');
     }
   }
 

@@ -366,7 +366,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
   Widget _buildProductCard(Map<String, dynamic> product, bool isDark) {
     return InkWell(
       onTap: () {
-        print('Product card tapped: ${product['name']}');
         Navigator.pushNamed(
           context,
           '/product-detail',
