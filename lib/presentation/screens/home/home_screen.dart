@@ -715,11 +715,17 @@ class _HomeScreenState extends State<HomeScreen> {
                         final product = _featuredProducts[index];
                         
                         // Generate a placeholder image URL if images are empty
-                        final imageUrl = product.images.isNotEmpty
-                            ? (product.images[0] is String 
-                                ? product.images[0] as String
-                                : (product.images[0]['url'] ?? product.images[0]['path'] ?? ''))
-                            : '';
+                        String imageUrl = '';
+                        if (product.images.isNotEmpty) {
+                          final firstImage = product.images[0];
+                          if (firstImage is String) {
+                            imageUrl = firstImage;
+                          } else if (firstImage is Map<String, dynamic>) {
+                            imageUrl = firstImage['url']?.toString() ?? 
+                                       firstImage['path']?.toString() ?? 
+                                       firstImage['image']?.toString() ?? '';
+                          }
+                        }
                         
                         // Use a colorful placeholder if no image
                         final displayImageUrl = imageUrl.isEmpty
@@ -886,10 +892,22 @@ class _HomeScreenState extends State<HomeScreen> {
                       separatorBuilder: (context, index) => const SizedBox(width: 16),
                       itemBuilder: (context, index) {
                         final product = _newProducts[index];
+                        String imageUrl = '';
+                        if (product.images.isNotEmpty) {
+                          final firstImage = product.images[0];
+                          if (firstImage is String) {
+                            imageUrl = firstImage;
+                          } else if (firstImage is Map<String, dynamic>) {
+                            imageUrl = firstImage['url']?.toString() ?? 
+                                       firstImage['path']?.toString() ?? 
+                                       firstImage['image']?.toString() ?? '';
+                          }
+                        }
+                        final displayImageUrl = imageUrl.isEmpty
+                            ? 'https://via.placeholder.com/300x300/4A90E2/FFFFFF?text=${Uri.encodeComponent(product.name)}'
+                            : imageUrl;
                         return _buildNewArrivalCard(
-                          product.images.isNotEmpty
-                              ? product.images[0]
-                              : 'https://via.placeholder.com/300x300/4A90E2/FFFFFF?text=${Uri.encodeComponent(product.name)}',
+                          displayImageUrl,
                           product.name,
                           '${product.currency} ${product.finalPrice.toStringAsFixed(2)}',
                           isDark,

@@ -99,11 +99,29 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Widget _buildImageCarousel(bool isDark) {
-    final images = [
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuAKeRwwcANmqB2kVQNoFhL1SEJNsUbNQCYesmbYQmUtk_PT5xOP7QfgGd1W-t78FoSxCw6CbyCDNJk3E8Mg-bGoMLSnHFgbAym9NrLtkGY0lo40qLfHN6R9bqSPCacuFmzI4r9A9MlS3wx60p-beGDbLKv4gy3qs8cJJqb6yeBZ7mpXEahGHF0nhB2lCkmtjd5ge0eWULhVpXCWRuo3MEH8ec_n9jSc8HCzIqr4ScuYcfvX3_BgU1ApqIVT2uWOJEBUnsHessqcN5qa',
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuDhCa3K3wS8G0CjjJZCDPRcmPgKIxsJL6D8Y2KED9SJMpd7t-vWuTDKTQH6L_m7G1h6XpwDmarK9c844iyLSl0dp1DBNPCZBIupD0fczbAh3vho7J01jeJQFf5e-jyMzBR30gOg-jJvqjc5vpNrMdrWuMv4GBqGubAr49p-Th-YOsD-c5D3dlEJGTdQ-Q1fKr-OtX95ku18AfJsyD5q70IPFaBWGIVxumY12k87pzSNes-1SSIB4UpKKhlih3IvNAL-CU1w46kAqDxA',
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuAjQdV5XotCllunWJclkg6_-qqhOsz2YRPjO5DR4l09V8Z86kvoGoOYl-6Y_O_HAEkcOfK1A2SXOEtLlYHANEPwdy6ifppPsyTsHS9CbpzRobmZwG8taAcYnGal8UXcUC_HQupVe0_gu3KScFOY_jR2-tkceLKP3XWNUMyIzQUBJIqlobWs2sbRfeesUcb1qvYIFwj2IScey-j0q8bUxMfyTeXcmOGMuv3ZypGIejbwKqdwuEceTYwHrOYFL0VXEM4S6ljHfoDos2Kx',
-    ];
+    // Use images from product if available, otherwise use placeholder
+    final productImages = widget.product['images'] as List<dynamic>?;
+    final List<String> images = [];
+    
+    if (productImages != null && productImages.isNotEmpty) {
+      for (var img in productImages) {
+        if (img is String) {
+          images.add(img);
+        } else if (img is Map<String, dynamic>) {
+          final url = img['url']?.toString() ?? 
+                     img['path']?.toString() ?? 
+                     img['image']?.toString() ?? '';
+          if (url.isNotEmpty) images.add(url);
+        }
+      }
+    }
+    
+    // If no valid images, use placeholders
+    if (images.isEmpty) {
+      images.addAll([
+        'https://via.placeholder.com/400x400?text=Product+Image',
+      ]);
+    }
 
     return SizedBox(
       height: MediaQuery.of(context).size.height * 0.5,
@@ -232,11 +250,19 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Widget _buildHeader(bool isDark) {
+    final productName = widget.product['name']?.toString() ?? 'Product Name';
+    final price = (widget.product['price'] ?? widget.product['discountPrice'] ?? 0.0) as num;
+    final originalPrice = widget.product['discountPrice'] != null 
+        ? (widget.product['price'] ?? 0.0) as num
+        : null;
+    final rating = (widget.product['rating'] ?? 0.0) as num;
+    final reviewsCount = (widget.product['reviewsCount'] ?? widget.product['reviews_count'] ?? 0) as num;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Sony WH-1000XM5 Wireless Noise-Canceling',
+          productName,
           style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
@@ -248,19 +274,21 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         Row(
           children: [
             StyledPriceText(
-              amount: 348.00,
+              amount: price.toDouble(),
               fontSize: 24,
               fontWeight: FontWeight.bold,
               color: AppColors.primary,
             ),
-            const SizedBox(width: 12),
-            StyledPriceText(
-              amount: 399.00,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey.shade400,
-              decoration: TextDecoration.lineThrough,
-            ),
+            if (originalPrice != null && originalPrice > price) ...[
+              const SizedBox(width: 12),
+              StyledPriceText(
+                amount: originalPrice.toDouble(),
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey.shade400,
+                decoration: TextDecoration.lineThrough,
+              ),
+            ],
             const Spacer(),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -273,7 +301,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   const Icon(Icons.star, color: Colors.amber, size: 18),
                   const SizedBox(width: 4),
                   Text(
-                    '4.8',
+                    rating.toStringAsFixed(1),
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -282,7 +310,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    '(120 reviews)',
+                    '($reviewsCount reviews)',
                     style: TextStyle(
                       fontSize: 12,
                       color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
@@ -299,18 +327,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             Container(
               width: 8,
               height: 8,
-              decoration: const BoxDecoration(
-                color: Colors.green,
+              decoration: BoxDecoration(
+                color: (widget.product['stock'] as num? ?? 0) > 0 ? Colors.green : Colors.red,
                 shape: BoxShape.circle,
               ),
             ),
             const SizedBox(width: 6),
-            const Text(
-              'In Stock',
+            Text(
+              (widget.product['stock'] as num? ?? 0) > 0 ? 'In Stock' : 'Out of Stock',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: Colors.green,
+                color: (widget.product['stock'] as num? ?? 0) > 0 ? Colors.green : Colors.red,
               ),
             ),
             const SizedBox(width: 16),
@@ -320,7 +348,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             ),
             const SizedBox(width: 16),
             Text(
-              'SKU: WH-1000XM5-BLK',
+              'SKU: ${widget.product['id']?.toString() ?? 'N/A'}',
               style: TextStyle(
                 fontSize: 14,
                 color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
@@ -333,8 +361,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   Widget _buildShortDescription(bool isDark) {
+    final description = widget.product['description']?.toString() ?? 'No description available';
+    
     return Text(
-      'Industry-leading noise cancellation optimized for you. With 2 processors controlling 8 microphones for unprecedented noise cancellation and exceptional call quality.',
+      description,
       style: TextStyle(
         fontSize: 14,
         color: isDark ? Colors.grey.shade300 : Colors.grey.shade600,

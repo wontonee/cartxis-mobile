@@ -45,18 +45,27 @@ class _ReviewScreenState extends State<ReviewScreen> {
     try {
       final cartModel = await _cartService.getCart();
       setState(() {
-        _cartItems = cartModel.items.map((item) => {
-          'product': {
-            'name': item.product.name,
-            'image_url': item.product.images.isNotEmpty 
-                ? (item.product.images[0] is String 
-                    ? item.product.images[0] 
-                    : item.product.images[0]['url'] ?? '')
-                : '',
+        _cartItems = cartModel.items.map((item) {
+          String imageUrl = '';
+          if (item.product.images.isNotEmpty) {
+            final firstImage = item.product.images[0];
+            if (firstImage is String) {
+              imageUrl = firstImage;
+            } else if (firstImage is Map<String, dynamic>) {
+              imageUrl = firstImage['url']?.toString() ?? 
+                         firstImage['path']?.toString() ?? 
+                         firstImage['image']?.toString() ?? '';
+            }
+          }
+          return {
+            'product': {
+              'name': item.product.name,
+              'image_url': imageUrl,
+              'price': item.price,
+            },
+            'quantity': item.quantity,
             'price': item.price,
-          },
-          'quantity': item.quantity,
-          'price': item.price,
+          };
         }).toList();
         _isLoading = false;
       });

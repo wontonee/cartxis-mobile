@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:vortex_app/core/constants/app_colors.dart';
 import 'package:vortex_app/presentation/screens/home/home_screen.dart';
 import 'package:vortex_app/presentation/screens/categories/categories_screen.dart';
+import 'package:vortex_app/presentation/screens/categories/category_products_screen.dart';
 import 'package:vortex_app/presentation/screens/cart/cart_screen.dart';
 import 'package:vortex_app/presentation/screens/wishlist/wishlist_screen.dart';
 import 'package:vortex_app/presentation/screens/profile/profile_screen.dart';
@@ -19,22 +20,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
   int _cartCount = 0;
   final CartService _cartService = CartService();
   int _cartRefreshKey = 0; // Used to force cart screen rebuild
-
-  List<Widget> get _screens => [
-    HomeScreen(onCartChanged: _loadCartCount),
-    const CategoriesScreen(),
-    CartScreen(
-      key: ValueKey('cart_$_cartRefreshKey'), // Force rebuild when key changes
-      onCartChanged: _loadCartCount,
-      onContinueShopping: () {
-        setState(() {
-          _selectedIndex = 0; // Switch to home tab
-        });
-      },
-    ),
-    const WishlistScreen(),
-    const ProfileScreen(),
-  ];
 
   @override
   void initState() {
@@ -96,7 +81,36 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
     return Scaffold(
       body: IndexedStack(
         index: _selectedIndex,
-        children: _screens,
+        children: [
+          HomeScreen(onCartChanged: _loadCartCount),
+          Navigator(
+            onGenerateRoute: (settings) {
+              if (settings.name == '/category-products') {
+                final args = settings.arguments as Map<String, dynamic>?;
+                return MaterialPageRoute(
+                  builder: (context) => CategoryProductsScreen(
+                    categoryId: args?['categoryId'] ?? 1,
+                    categoryName: args?['categoryName'] ?? 'Products',
+                  ),
+                );
+              }
+              return MaterialPageRoute(
+                builder: (context) => const CategoriesScreen(),
+              );
+            },
+          ),
+          CartScreen(
+            key: ValueKey('cart_$_cartRefreshKey'),
+            onCartChanged: _loadCartCount,
+            onContinueShopping: () {
+              setState(() {
+                _selectedIndex = 0;
+              });
+            },
+          ),
+          const WishlistScreen(),
+          const ProfileScreen(),
+        ],
       ),
       bottomNavigationBar: _buildBottomNavBar(isDark),
     );

@@ -11,12 +11,15 @@ class CategoriesScreen extends StatefulWidget {
   State<CategoriesScreen> createState() => _CategoriesScreenState();
 }
 
-class _CategoriesScreenState extends State<CategoriesScreen> {
+class _CategoriesScreenState extends State<CategoriesScreen> with AutomaticKeepAliveClientMixin {
   final TextEditingController _searchController = TextEditingController();
   final CategoryService _categoryService = CategoryService();
   int? _expandedCategoryIndex;
   List<CategoryModel> _categories = [];
   bool _isLoading = true;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -61,6 +64,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -117,65 +121,14 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
             Container(
               height: 56,
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: Icon(
-                      Icons.arrow_back_ios_new,
-                      size: 20,
-                      color: isDark ? Colors.white : Colors.grey.shade900,
-                    ),
+              child: const Center(
+                child: Text(
+                  'Categories',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
                   ),
-                  const Expanded(
-                    child: Text(
-                      'Categories',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  Stack(
-                    children: [
-                      IconButton(
-                        onPressed: () {},
-                        icon: Icon(
-                          Icons.shopping_cart,
-                          size: 24,
-                          color: isDark ? Colors.white : Colors.grey.shade900,
-                        ),
-                      ),
-                      Positioned(
-                        top: 6,
-                        right: 6,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: AppColors.primary,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isDark ? const Color(0xFF101922) : const Color(0xFFF6F7F8),
-                              width: 2,
-                            ),
-                          ),
-                          constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                          child: const Text(
-                            '2',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              height: 1,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                ),
               ),
             ),
             // Search Bar
@@ -440,7 +393,17 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                                 _expandedCategoryIndex = isExpanded ? null : index;
                               });
                             }
-                          : () {},
+                          : () {
+                              // Navigate to category products screen
+                              Navigator.pushNamed(
+                                context,
+                                '/category-products',
+                                arguments: {
+                                  'categoryId': category.id,
+                                  'categoryName': category.name,
+                                },
+                              );
+                            },
                       borderRadius: BorderRadius.circular(16),
                       child: Container(
                         padding: const EdgeInsets.all(16),
@@ -530,7 +493,17 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                                 final isLast = subIndex == category.children.length - 1;
 
                                 return InkWell(
-                                  onTap: () {},
+                                  onTap: () {
+                                    // Navigate to subcategory products screen
+                                    Navigator.pushNamed(
+                                      context,
+                                      '/category-products',
+                                      arguments: {
+                                        'categoryId': subcategory.id,
+                                        'categoryName': subcategory.name,
+                                      },
+                                    );
+                                  },
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 72,

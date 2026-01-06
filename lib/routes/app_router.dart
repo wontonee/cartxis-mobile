@@ -8,6 +8,7 @@ import 'package:vortex_app/presentation/screens/splash/splash_screen.dart';
 import 'package:vortex_app/presentation/screens/products/product_list_screen.dart';
 import 'package:vortex_app/presentation/screens/products/product_detail_screen.dart';
 import 'package:vortex_app/presentation/screens/categories/categories_screen.dart';
+import 'package:vortex_app/presentation/screens/categories/category_products_screen.dart';
 import 'package:vortex_app/presentation/screens/main/main_navigation_screen.dart';
 // import 'package:vortex_app/presentation/screens/checkout/shipping_screen.dart'; // Requires parameters
 import 'package:vortex_app/presentation/screens/checkout/order_success_screen.dart';
@@ -36,6 +37,7 @@ class AppRouter {
   static const String productList = '/products';
   static const String productDetail = '/product-detail';
   static const String categories = '/categories';
+  static const String categoryProducts = '/category-products';
   static const String shipping = '/shipping';
   static const String payment = '/payment';
   static const String review = '/review';
@@ -116,6 +118,16 @@ class AppRouter {
       case categories:
         return MaterialPageRoute(
           builder: (_) => const CategoriesScreen(),
+          settings: settings,
+        );
+
+      case categoryProducts:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder: (_) => CategoryProductsScreen(
+            categoryId: args?['categoryId'] ?? 1,
+            categoryName: args?['categoryName'] ?? 'Products',
+          ),
           settings: settings,
         );
 

@@ -89,4 +89,33 @@ class ProductService {
 
     return ProductsResponse.fromJson(response);
   }
+
+  /// Get products by category
+  Future<ProductsResponse> getCategoryProducts({
+    required int categoryId,
+    int page = 1,
+    int perPage = 20,
+    String sort = 'created_at',
+    String order = 'desc',
+  }) async {
+    final response = await _apiClient.get(
+      '/api/${ApiConfig.apiVersion}/categories/$categoryId/products',
+      queryParameters: {
+        'page': page.toString(),
+        'per_page': perPage.toString(),
+        'sort': sort,
+        'order': order,
+      },
+    );
+
+    if (response['success'] == false) {
+      throw ApiException(
+        message: response['message'] ?? 'Failed to retrieve category products',
+        code: response['error_code'] ?? 'PRODUCTS_FETCH_FAILED',
+        errors: response['errors'] as Map<String, dynamic>?,
+      );
+    }
+
+    return ProductsResponse.fromJson(response);
+  }
 }

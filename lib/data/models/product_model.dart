@@ -33,14 +33,14 @@ class ReviewsSummary {
   final int totalReviews;
 
   ReviewsSummary({
-    required this.averageRating,
-    required this.totalReviews,
+    this.averageRating = 0.0,
+    this.totalReviews = 0,
   });
 
   factory ReviewsSummary.fromJson(Map<String, dynamic> json) {
     return ReviewsSummary(
-      averageRating: (json['average_rating'] as num).toDouble(),
-      totalReviews: json['total_reviews'] as int,
+      averageRating: json['average_rating'] != null ? (json['average_rating'] as num).toDouble() : 0.0,
+      totalReviews: json['total_reviews'] as int? ?? 0,
     );
   }
 
@@ -139,31 +139,37 @@ class ProductModel {
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
     return ProductModel(
-      id: json['id'] as int,
-      sku: json['sku'] as String,
-      name: json['name'] as String,
-      slug: json['slug'] as String,
+      id: json['id'] as int? ?? 0,
+      sku: json['sku'] as String? ?? '',
+      name: json['name'] as String? ?? 'Unnamed Product',
+      slug: json['slug'] as String? ?? '',
       description: json['description'] as String?,
       shortDescription: json['short_description'] as String?,
-      price: (json['price'] as num).toDouble(),
+      price: json['price'] != null ? (json['price'] as num).toDouble() : 0.0,
       specialPrice: json['special_price'] != null ? (json['special_price'] as num).toDouble() : null,
-      finalPrice: (json['final_price'] as num).toDouble(),
-      discountPercentage: (json['discount_percentage'] as num).toDouble(),
-      currency: json['currency'] as String,
-      stockStatus: json['stock_status'] as String,
-      quantity: json['quantity'] as int,
-      inStock: json['in_stock'] as bool,
-      isFeatured: json['is_featured'] as bool,
-      isNew: json['is_new'] as bool,
+      finalPrice: json['final_price'] != null ? (json['final_price'] as num).toDouble() : 0.0,
+      discountPercentage: json['discount_percentage'] != null ? (json['discount_percentage'] as num).toDouble() : 0.0,
+      currency: json['currency'] as String? ?? 'USD',
+      stockStatus: json['stock_status'] as String? ?? 'out_of_stock',
+      quantity: json['quantity'] as int? ?? 0,
+      inStock: json['in_stock'] as bool? ?? false,
+      isFeatured: json['is_featured'] as bool? ?? false,
+      isNew: json['is_new'] as bool? ?? false,
       weight: json['weight'] as String?,
-      dimensions: ProductDimensions.fromJson(json['dimensions'] as Map<String, dynamic>),
+      dimensions: json['dimensions'] != null 
+          ? ProductDimensions.fromJson(json['dimensions'] as Map<String, dynamic>) 
+          : ProductDimensions(),
       brand: json['brand'],
       categories: (json['categories'] as List<dynamic>?) ?? [],
       images: (json['images'] as List<dynamic>?) ?? [],
-      reviewsSummary: ReviewsSummary.fromJson(json['reviews_summary'] as Map<String, dynamic>),
-      meta: ProductMeta.fromJson(json['meta'] as Map<String, dynamic>),
-      createdAt: json['created_at'] as String,
-      updatedAt: json['updated_at'] as String,
+      reviewsSummary: json['reviews_summary'] != null
+          ? ReviewsSummary.fromJson(json['reviews_summary'] as Map<String, dynamic>)
+          : ReviewsSummary(averageRating: 0.0, totalReviews: 0),
+      meta: json['meta'] != null
+          ? ProductMeta.fromJson(json['meta'] as Map<String, dynamic>)
+          : ProductMeta(),
+      createdAt: json['created_at'] as String? ?? '',
+      updatedAt: json['updated_at'] as String? ?? '',
     );
   }
 

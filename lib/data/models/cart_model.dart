@@ -20,14 +20,20 @@ class CartModel {
 
   factory CartModel.fromJson(Map<String, dynamic> json) {
     return CartModel(
-      id: json['id'] as int,
-      items: (json['items'] as List<dynamic>)
-          .map((item) => CartItemModel.fromJson(item as Map<String, dynamic>))
-          .toList(),
-      summary: CartSummary.fromJson(json['summary'] as Map<String, dynamic>),
-      coupon: CartCoupon.fromJson(json['coupon'] as Map<String, dynamic>),
-      createdAt: json['created_at'] as String,
-      updatedAt: json['updated_at'] as String,
+      id: json['id'] as int? ?? 0,
+      items: json['items'] != null
+          ? (json['items'] as List<dynamic>)
+              .map((item) => CartItemModel.fromJson(item as Map<String, dynamic>? ?? {}))
+              .toList()
+          : [],
+      summary: json['summary'] != null
+          ? CartSummary.fromJson(json['summary'] as Map<String, dynamic>)
+          : CartSummary(itemsCount: 0, subtotal: 0.0, discount: 0.0, total: 0.0, currency: 'USD'),
+      coupon: json['coupon'] != null
+          ? CartCoupon.fromJson(json['coupon'] as Map<String, dynamic>)
+          : CartCoupon(),
+      createdAt: json['created_at'] as String? ?? '',
+      updatedAt: json['updated_at'] as String? ?? '',
     );
   }
 }
@@ -56,14 +62,14 @@ class CartItemModel {
 
   factory CartItemModel.fromJson(Map<String, dynamic> json) {
     return CartItemModel(
-      id: json['id'] as int,
-      productId: json['product_id'] as int,
+      id: json['id'] as int? ?? 0,
+      productId: json['product_id'] as int? ?? 0,
       variantId: json['variant_id'] as int?,
-      product: ProductModel.fromJson(json['product'] as Map<String, dynamic>),
-      quantity: json['quantity'] as int,
-      price: (json['price'] as num).toDouble(),
-      subtotal: (json['subtotal'] as num).toDouble(),
-      currency: json['currency'] as String,
+      product: ProductModel.fromJson(json['product'] as Map<String, dynamic>? ?? {}),
+      quantity: json['quantity'] as int? ?? 1,
+      price: json['price'] != null ? (json['price'] as num).toDouble() : 0.0,
+      subtotal: json['subtotal'] != null ? (json['subtotal'] as num).toDouble() : 0.0,
+      currency: json['currency'] as String? ?? 'USD',
     );
   }
 }
@@ -86,11 +92,11 @@ class CartSummary {
 
   factory CartSummary.fromJson(Map<String, dynamic> json) {
     return CartSummary(
-      itemsCount: json['items_count'] as int,
-      subtotal: (json['subtotal'] as num).toDouble(),
-      discount: (json['discount'] as num).toDouble(),
-      total: (json['total'] as num).toDouble(),
-      currency: json['currency'] as String,
+      itemsCount: json['items_count'] as int? ?? 0,
+      subtotal: json['subtotal'] != null ? (json['subtotal'] as num).toDouble() : 0.0,
+      discount: json['discount'] != null ? (json['discount'] as num).toDouble() : 0.0,
+      total: json['total'] != null ? (json['total'] as num).toDouble() : 0.0,
+      currency: json['currency'] as String? ?? 'USD',
     );
   }
 }
@@ -101,14 +107,14 @@ class CartCoupon {
   final double discountAmount;
 
   CartCoupon({
-    required this.code,
-    required this.discountAmount,
+    this.code,
+    this.discountAmount = 0.0,
   });
 
   factory CartCoupon.fromJson(Map<String, dynamic> json) {
     return CartCoupon(
       code: json['code'] as String?,
-      discountAmount: (json['discount_amount'] as num).toDouble(),
+      discountAmount: json['discount_amount'] != null ? (json['discount_amount'] as num).toDouble() : 0.0,
     );
   }
 }

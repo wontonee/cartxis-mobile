@@ -123,14 +123,15 @@ class CategoryCardSkeleton extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(right: 12),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           SkeletonLoader(
-            height: 70,
-            width: 70,
+            height: 58,
+            width: 58,
             borderRadius: BorderRadius.circular(12),
           ),
-          const SizedBox(height: 8),
-          const SkeletonLoader(height: 12, width: 70),
+          const SizedBox(height: 4),
+          const SkeletonLoader(height: 8, width: 58),
         ],
       ),
     );
