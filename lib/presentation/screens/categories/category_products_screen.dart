@@ -4,6 +4,7 @@ import '../../../data/models/product_model.dart';
 import '../../../data/services/product_service.dart';
 import '../../../data/services/cart_service.dart';
 import '../../widgets/skeleton_loader.dart';
+import '../../widgets/price_text.dart';
 
 class CategoryProductsScreen extends StatefulWidget {
   final int categoryId;
@@ -534,41 +535,35 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                       if (product.specialPrice != null &&
                           product.specialPrice != product.price) ...[
                         Flexible(
-                          child: Text(
-                            '${product.currency} ${product.specialPrice!.toStringAsFixed(2)}',
+                          child: PriceText(
+                            amount: product.specialPrice!,
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
                               color: AppColors.primary,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         const SizedBox(width: 4),
                         Flexible(
-                          child: Text(
-                            '${product.currency} ${product.price.toStringAsFixed(2)}',
+                          child: PriceText(
+                            amount: product.price,
                             style: TextStyle(
                               fontSize: 11,
                               color: Colors.grey.shade400,
                               decoration: TextDecoration.lineThrough,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ] else
                         Flexible(
-                          child: Text(
-                            '${product.currency} ${product.price.toStringAsFixed(2)}',
+                          child: PriceText(
+                            amount: product.price,
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
                               color: AppColors.primary,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       const SizedBox(width: 4),

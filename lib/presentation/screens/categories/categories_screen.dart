@@ -434,26 +434,13 @@ class _CategoriesScreenState extends State<CategoriesScreen> with AutomaticKeepA
                             ),
                             const SizedBox(width: 16),
                             Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    category.name,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: isDark ? Colors.white : Colors.grey.shade900,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    '${category.productsCount} Products',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
-                                    ),
-                                  ),
-                                ],
+                              child: Text(
+                                category.name,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDark ? Colors.white : Colors.grey.shade900,
+                                ),
                               ),
                             ),
                             Icon(
@@ -506,7 +493,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> with AutomaticKeepA
                                   },
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(
-                                      horizontal: 72,
+                                      horizontal: 16,
                                       vertical: 14,
                                     ),
                                     decoration: BoxDecoration(
@@ -520,84 +507,19 @@ class _CategoriesScreenState extends State<CategoriesScreen> with AutomaticKeepA
                                               ),
                                             ),
                                     ),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          subcategory.name,
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500,
-                                            color: isDark
-                                                ? Colors.grey.shade300
-                                                : Colors.grey.shade700,
-                                          ),
-                                        ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 2,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: isDark
-                                                ? Colors.grey.shade600
-                                                : Colors.white,
-                                            border: Border.all(
-                                              color: isDark
-                                                  ? Colors.grey.shade500
-                                                  : Colors.grey.shade200,
-                                            ),
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          child: Text(
-                                            '${subcategory.productsCount}',
-                                            style: TextStyle(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                              color: isDark
-                                                  ? Colors.grey.shade300
-                                                  : Colors.grey.shade500,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                    child: Text(
+                                      subcategory.name,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: isDark
+                                            ? Colors.grey.shade300
+                                            : Colors.grey.shade700,
+                                      ),
                                     ),
                                   ),
                                 );
                               },
-                            ),
-                            // View All Button
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  top: BorderSide(
-                                    color: isDark
-                                        ? Colors.grey.shade700.withOpacity(0.5)
-                                        : Colors.grey.shade100,
-                                  ),
-                                ),
-                              ),
-                              child: Center(
-                                child: TextButton(
-                                  onPressed: () {},
-                                  style: TextButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 4,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    'VIEW ALL ${category.name.toUpperCase()}',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.primary,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                ),
-                              ),
                             ),
                           ],
                         ),
