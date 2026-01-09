@@ -37,6 +37,8 @@ class ApiConfig {
   // Product Endpoints
   static const String products = '/api/$apiVersion/products';
   static const String productsFeatured = '/api/$apiVersion/products/featured';
+  static const String productsNewArrivals = '/api/$apiVersion/products/new-arrivals';
+  static const String productsOnSale = '/api/$apiVersion/products/on-sale';
   
   // Category Endpoints
   static const String categories = '/api/$apiVersion/categories';

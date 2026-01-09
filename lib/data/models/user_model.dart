@@ -5,6 +5,7 @@ class UserModel {
   final String email;
   final String? phone;
   final String? avatar;
+  final String? avatarUrl;
   final String? dateOfBirth;
   final String? gender;
   final String? emailVerifiedAt;
@@ -17,6 +18,7 @@ class UserModel {
     required this.email,
     this.phone,
     this.avatar,
+    this.avatarUrl,
     this.dateOfBirth,
     this.gender,
     this.emailVerifiedAt,
@@ -31,6 +33,7 @@ class UserModel {
       email: json['email'] as String,
       phone: json['phone'] as String?,
       avatar: json['avatar'] as String?,
+      avatarUrl: json['avatar_url'] as String?,
       dateOfBirth: json['date_of_birth'] as String?,
       gender: json['gender'] as String?,
       emailVerifiedAt: json['email_verified_at'] as String?,
@@ -46,6 +49,7 @@ class UserModel {
       'email': email,
       'phone': phone,
       'avatar': avatar,
+      'avatar_url': avatarUrl,
       'date_of_birth': dateOfBirth,
       'gender': gender,
       'email_verified_at': emailVerifiedAt,
@@ -60,6 +64,7 @@ class UserModel {
     String? email,
     String? phone,
     String? avatar,
+    String? avatarUrl,
     String? dateOfBirth,
     String? gender,
     String? emailVerifiedAt,
@@ -72,6 +77,7 @@ class UserModel {
       email: email ?? this.email,
       phone: phone ?? this.phone,
       avatar: avatar ?? this.avatar,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
       gender: gender ?? this.gender,
       emailVerifiedAt: emailVerifiedAt ?? this.emailVerifiedAt,

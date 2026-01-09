@@ -196,7 +196,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 Container(
                   width: 40,
@@ -209,36 +209,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     onPressed: () => Navigator.pop(context),
                     icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
                     padding: EdgeInsets.zero,
-                  ),
-                ),
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Stack(
-                    children: [
-                      IconButton(
-                        onPressed: () {},
-                        icon: const Icon(Icons.shopping_cart, color: Colors.white, size: 20),
-                        padding: EdgeInsets.zero,
-                      ),
-                      Positioned(
-                        top: 6,
-                        right: 6,
-                        child: Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 1),
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
                 ),
               ],

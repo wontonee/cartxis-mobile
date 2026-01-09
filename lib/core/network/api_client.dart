@@ -137,6 +137,72 @@ class ApiClient {
     }
   }
 
+  /// POST Multipart Request (for file uploads)
+  Future<Map<String, dynamic>> postMultipart(
+    String endpoint, {
+    Map<String, String>? headers,
+    Map<String, String>? fields,
+    Map<String, File>? files,
+  }) async {
+    try {
+      final uri = Uri.parse(ApiConfig.getFullUrl(endpoint));
+      final request = http.MultipartRequest('POST', uri);
+
+      // Add headers (without Content-Type as it's set automatically for multipart)
+      final builtHeaders = await _buildHeaders(headers);
+      builtHeaders.remove('Content-Type'); // Remove JSON content type
+      request.headers.addAll(builtHeaders);
+
+      // Add fields
+      if (fields != null) {
+        request.fields.addAll(fields);
+      }
+
+      // Add files
+      if (files != null) {
+        for (final entry in files.entries) {
+          final file = entry.value;
+          final stream = http.ByteStream(file.openRead());
+          final length = await file.length();
+          final multipartFile = http.MultipartFile(
+            entry.key,
+            stream,
+            length,
+            filename: file.path.split('/').last,
+          );
+          request.files.add(multipartFile);
+        }
+      }
+
+      // Send request
+      final streamedResponse = await _client
+          .send(request)
+          .timeout(ApiConfig.receiveTimeout);
+
+      // Get response
+      final response = await http.Response.fromStream(streamedResponse);
+
+      return _handleResponse(response);
+    } on SocketException {
+      throw ApiException(
+        message: 'No internet connection',
+        code: 'NO_INTERNET',
+      );
+    } on http.ClientException {
+      throw ApiException(
+        message: 'Connection failed',
+        code: 'CONNECTION_FAILED',
+      );
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      throw ApiException(
+        message: 'An unexpected error occurred: ${e.toString()}',
+        code: 'UNKNOWN_ERROR',
+      );
+    }
+  }
+
   /// DELETE Request
   Future<Map<String, dynamic>> delete(
     String endpoint, {

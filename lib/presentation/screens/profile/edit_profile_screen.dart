@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/services/auth_service.dart';
 import '../../../data/models/user_model.dart';
 import '../../../core/network/api_exception.dart';
+import '../../../core/config/api_config.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -32,6 +35,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   bool _obscureCurrentPassword = true;
   bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
+  
+  File? _selectedAvatar;
+  final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void initState() {
@@ -141,6 +147,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+      
+      if (image != null) {
+        setState(() {
+          _selectedAvatar = File(image.path);
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to pick image: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _saveChanges() async {
     if (_formKey.currentState!.validate()) {
       // Validate required fields
@@ -207,6 +239,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           phone: _phoneController.text.trim(),
           dateOfBirth: dateOfBirth,
           gender: _selectedGender,
+          avatar: _selectedAvatar,
         );
 
         if (mounted) {
@@ -331,17 +364,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       color: isDark ? const Color(0xFF1F2937) : Colors.white,
                                       width: 3,
                                     ),
+                                    image: _selectedAvatar != null
+                                        ? DecorationImage(
+                                            image: FileImage(_selectedAvatar!),
+                                            fit: BoxFit.cover,
+                                          )
+                                        : (_user?.avatarUrl != null
+                                            ? DecorationImage(
+                                                image: NetworkImage(
+                                                  '${_user!.avatarUrl!}?t=${DateTime.now().millisecondsSinceEpoch}',
+                                                ),
+                                                fit: BoxFit.cover,
+                                              )
+                                            : null),
                                   ),
-                                  child: Center(
-                                    child: Text(
-                                      _user?.name.substring(0, 1).toUpperCase() ?? 'U',
-                                      style: const TextStyle(
-                                        fontSize: 40,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
+                                  child: _selectedAvatar == null && _user?.avatarUrl == null
+                                      ? Center(
+                                          child: Text(
+                                            _user?.name.substring(0, 1).toUpperCase() ?? 'U',
+                                            style: const TextStyle(
+                                              fontSize: 40,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        )
+                                      : null,
                                 ),
                                 Positioned(
                                   bottom: 0,
@@ -367,11 +415,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             ),
                             const SizedBox(height: 12),
                             TextButton(
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Photo picker coming soon')),
-                                );
-                              },
+                              onPressed: _pickImage,
                               child: Text(
                                 'Change Photo',
                                 style: TextStyle(

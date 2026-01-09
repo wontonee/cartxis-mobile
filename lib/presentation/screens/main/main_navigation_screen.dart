@@ -6,6 +6,9 @@ import 'package:vortex_app/presentation/screens/categories/category_products_scr
 import 'package:vortex_app/presentation/screens/cart/cart_screen.dart';
 import 'package:vortex_app/presentation/screens/wishlist/wishlist_screen.dart';
 import 'package:vortex_app/presentation/screens/profile/profile_screen.dart';
+import 'package:vortex_app/presentation/screens/products/new_arrivals_screen.dart';
+import 'package:vortex_app/presentation/screens/products/flash_sales_screen.dart';
+import 'package:vortex_app/presentation/screens/products/featured_products_screen.dart';
 import 'package:vortex_app/data/services/cart_service.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -82,7 +85,37 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
       body: IndexedStack(
         index: _selectedIndex,
         children: [
-          HomeScreen(onCartChanged: _loadCartCount),
+          Navigator(
+            key: const ValueKey('home_navigator'),
+            initialRoute: '/',
+            onGenerateRoute: (settings) {
+              if (settings.name == '/new-arrivals') {
+                return MaterialPageRoute(
+                  builder: (context) => NewArrivalsScreen(
+                    onCartChanged: _loadCartCount,
+                  ),
+                );
+              }
+              if (settings.name == '/flash-sales') {
+                return MaterialPageRoute(
+                  builder: (context) => FlashSalesScreen(
+                    onCartChanged: _loadCartCount,
+                  ),
+                );
+              }
+              if (settings.name == '/featured-products') {
+                return MaterialPageRoute(
+                  builder: (context) => FeaturedProductsScreen(
+                    onCartChanged: _loadCartCount,
+                  ),
+                );
+              }
+              // Default route for Home (/ or null)
+              return MaterialPageRoute(
+                builder: (context) => HomeScreen(onCartChanged: _loadCartCount),
+              );
+            },
+          ),
           Navigator(
             onGenerateRoute: (settings) {
               if (settings.name == '/category-products') {

@@ -507,15 +507,27 @@ class _CategoriesScreenState extends State<CategoriesScreen> with AutomaticKeepA
                                               ),
                                             ),
                                     ),
-                                    child: Text(
-                                      subcategory.name,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w500,
-                                        color: isDark
-                                            ? Colors.grey.shade300
-                                            : Colors.grey.shade700,
-                                      ),
+                                    child: Row(
+                                      children: [
+                                        const SizedBox(width: 40),
+                                        Expanded(
+                                          child: Text(
+                                            subcategory.name,
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                              color: isDark
+                                                  ? Colors.grey.shade300
+                                                  : Colors.grey.shade700,
+                                            ),
+                                          ),
+                                        ),
+                                        Icon(
+                                          Icons.chevron_right,
+                                          size: 20,
+                                          color: Colors.grey.shade400,
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 );

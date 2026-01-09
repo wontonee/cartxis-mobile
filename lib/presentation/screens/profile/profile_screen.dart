@@ -5,6 +5,7 @@ import 'package:vortex_app/data/services/auth_service.dart';
 import 'package:vortex_app/data/models/user_model.dart';
 import 'package:vortex_app/core/network/api_client.dart';
 import 'package:vortex_app/core/network/api_exception.dart';
+import 'package:vortex_app/core/config/api_config.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -32,7 +33,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _isLoading = true;
       });
 
+      print('DEBUG: Loading user profile...');
       final user = await _authService.getProfile();
+      print('DEBUG: Profile loaded successfully!');
+      print('DEBUG: Name: ${user.name}');
+      print('DEBUG: Email: ${user.email}');  
+      print('DEBUG: Avatar: ${user.avatar}');
+      print('DEBUG: AvatarUrl: ${user.avatarUrl}');
       
       if (mounted) {
         setState(() {
@@ -40,21 +47,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _isLoading = false;
         });
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('DEBUG: Profile loading error: $e');
+      print('DEBUG: Stack trace: $stackTrace');
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
         
-        String errorMessage = 'Failed to load profile';
+        String errorMessage = 'Failed to load profile: $e';
         if (e is ApiException) {
-          errorMessage = e.message;
+          errorMessage = 'API Error: ${e.message}\nCode: ${e.code}';
         }
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
           ),
         );
       }
@@ -206,15 +216,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           offset: const Offset(0, 4),
                                         ),
                                       ],
-                                      image: _user?.avatar != null
+                                      image: _user?.avatarUrl != null
                                           ? DecorationImage(
-                                              image: NetworkImage(_user!.avatar!),
+                                              image: NetworkImage(
+                                                '${_user!.avatarUrl!}?t=${DateTime.now().millisecondsSinceEpoch}',
+                                              ),
                                               fit: BoxFit.cover,
                                             )
                                           : null,
-                                      color: _user?.avatar == null ? AppColors.primary : null,
+                                      color: _user?.avatarUrl == null ? AppColors.primary : null,
                                     ),
-                                    child: _user?.avatar == null
+                                    child: _user?.avatarUrl == null
                                         ? Center(
                                             child: Text(
                                               _user?.name.substring(0, 1).toUpperCase() ?? 'U',
@@ -227,33 +239,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           )
                                         : null,
                                   ),
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                                    width: 2,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.primary.withOpacity(0.3),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: const Icon(
-                                  Icons.edit,
-                                  size: 16,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
                           ],
                         ),
                               const SizedBox(height: 16),
@@ -329,51 +314,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           icon: Icons.location_on_outlined,
                           title: 'Addresses',
                           onTap: () => Navigator.pushNamed(context, '/address-management'),
-                          isDark: isDark,
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // App Settings Section
-                        _buildSectionHeader('APP SETTINGS', isDark),
-                        _buildMenuItem(
-                          icon: Icons.notifications_outlined,
-                          title: 'Notifications',
-                          onTap: () => _showComingSoon('Notifications'),
-                          isDark: isDark,
-                        ),
-                        _buildMenuItem(
-                          icon: Icons.language,
-                          title: 'Language',
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'English',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Icon(
-                                Icons.chevron_right,
-                                color: isDark ? Colors.grey.shade600 : Colors.grey.shade400,
-                              ),
-                            ],
-                          ),
-                          onTap: () => _showComingSoon('Language settings'),
-                          isDark: isDark,
-                        ),
-                        _buildMenuItem(
-                          icon: Icons.dark_mode_outlined,
-                          title: 'Dark Mode',
-                          trailing: Switch(
-                            value: _isDarkMode,
-                            onChanged: _toggleDarkMode,
-                            activeColor: AppColors.primary,
-                          ),
-                          onTap: null,
                           isDark: isDark,
                         ),
 

@@ -18,18 +18,19 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final _searchController = TextEditingController();
   final _productService = ProductService();
   final _categoryService = CategoryService();
   final _cartService = CartService();
   
   List<ProductModel> _featuredProducts = [];
-  List<ProductModel> _newProducts = [];
+  List<ProductModel> _newArrivals = [];
+  List<ProductModel> _saleProducts = [];
   List<ProductModel> _allProducts = [];
   List<CategoryModel> _categories = [];
   
   bool _isLoadingFeatured = true;
-  bool _isLoadingNew = true;
+  bool _isLoadingNewArrivals = true;
+  bool _isLoadingSale = true;
   bool _isLoadingAll = true;
   bool _isLoadingCategories = true;
   bool _isAddingToCart = false; // Prevent duplicate add to cart calls
@@ -47,7 +48,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadProducts() async {
     await Future.wait([
       _loadFeaturedProducts(),
-      _loadNewProducts(),
+      _loadNewArrivals(),
+      _loadSaleProducts(),
       _loadAllProducts(),
     ]);
   }
@@ -100,27 +102,51 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _loadNewProducts() async {
+  Future<void> _loadNewArrivals() async {
     try {
       setState(() {
-        _isLoadingNew = true;
+        _isLoadingNewArrivals = true;
       });
 
-      final response = await _productService.getNewProducts(
-        page: 1,
-        perPage: 10,
+      final products = await _productService.getNewArrivals(
+        limit: 10,
       );
       
       if (mounted) {
         setState(() {
-          _newProducts = response.data;
-          _isLoadingNew = false;
+          _newArrivals = products;
+          _isLoadingNewArrivals = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
-          _isLoadingNew = false;
+          _isLoadingNewArrivals = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadSaleProducts() async {
+    try {
+      setState(() {
+        _isLoadingSale = true;
+      });
+
+      final products = await _productService.getOnSaleProducts(
+        limit: 10,
+      );
+      
+      if (mounted) {
+        setState(() {
+          _saleProducts = products;
+          _isLoadingSale = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingSale = false;
         });
       }
     }
@@ -161,7 +187,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
-    _searchController.dispose();
     super.dispose();
   }
 
@@ -318,7 +343,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Expanded(
             child: GestureDetector(
               onTap: () {
-                Navigator.pushNamed(context, '/search');
+                Navigator.of(context, rootNavigator: true).pushNamed('/search');
               },
               child: Container(
                 height: 44,
@@ -335,28 +360,24 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
-                child: AbsorbPointer(
-                  child: TextField(
-                    controller: _searchController,
-                    readOnly: true,
-                    decoration: InputDecoration(
-                      hintText: 'Search products...',
-                      hintStyle: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade400,
-                      ),
-                      prefixIcon: const Icon(
+                child: Row(
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      child: Icon(
                         Icons.search,
                         color: AppColors.primary,
                         size: 20,
                       ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
+                    ),
+                    Text(
+                      'Search products...',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade400,
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ),
@@ -670,11 +691,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               TextButton(
                 onPressed: () {
-                  Navigator.pushNamed(
-                    context,
-                    '/products',
-                    arguments: {'category': 'featured'},
-                  );
+                  Navigator.pushNamed(context, '/featured-products');
                 },
                 child: const Text(
                   'See All',
@@ -779,7 +796,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               TextButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.pushNamed(context, '/flash-sales');
+                },
                 child: const Text(
                   'See All',
                   style: TextStyle(
@@ -794,38 +813,62 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         SizedBox(
           height: 280,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            children: [
-              _buildSaleCard(
-                'https://lh3.googleusercontent.com/aida-public/AB6AXuDln0P5UV_2q44rv_3thoSG9YXGNY7S4qr4Db8ERTTYnniKfGACOaAjdvVG9mqVsM_BatGpUtCFMgQ6WixED3UOELtQNZZp2_jsKMwjJUOzm26FC1XYfuoQ5pXgN3IBavRRv8RBZlV-Ea4eonmytpHSLX5ht_QAhjsIEebSRThhw5Deuk6ETMtJVIcF_ZXJs8coxYv7I71L1dYISkLTqJGUKGh-RZzlo1q3idSTm-KRR-BhMyxLUvmWvwZmucFzcP9zD5WbdXUHWOoM',
-                'Nike Air Max 270 Red',
-                '\$112.00',
-                '\$160.00',
-                '-30%',
-                isDark,
-              ),
-              const SizedBox(width: 16),
-              _buildSaleCard(
-                'https://lh3.googleusercontent.com/aida-public/AB6AXuD7bfyFfmndgJ9r4F6o8jkJbnoFRLVQnVdy7sstaC2AYyr3oCiOhzTm7akeYOuz8KXDz2t6RAl9vysYNAYWZdoJc3ittmjvcsGJV2YEfWq89VXLV4lQ3_MPYoK_1FmbwuERY8v1udWO93-ix-H_YS26cc4TElxnAsNRE2C1omL7RCPSAsIULIaWLQyBReqd_HlCMWR5tdjuHjfgpdC_9H4wkiJbxdvtBaR-DJPgSMO-0zc5B5kX2vKrrHuAN4x75V7cUDd9OFXQ6LQs',
-                'Adidas Ultra Boost DNA',
-                '\$144.00',
-                '\$180.00',
-                '-20%',
-                isDark,
-              ),
-              const SizedBox(width: 16),
-              _buildSaleCard(
-                'https://lh3.googleusercontent.com/aida-public/AB6AXuBihTM4vUrzf0BiEKJTKuqNzn2s7KfUA0dJLwTsGYriH9ogHriP99IJM65lD72aKWPRDfG4JJDppM80uRLeGV4LcmNJeaUa8VHZQv0BMFY1xmlPUEQ2WfLa1jiXNofQTbIe7Fr6ECCDL--C5q5MRgFxLQkWvXEcTIYQ-uLQGmMagDuAtnuwRPtXmFWvdeZ8yssT5Y5gLQte6_Rw0NXHVBblSWoaPEBdsEuYZQOBY4ggDsaXNlEC0o8_iPbod0LUW5tLB6Tg0EKIXUR9',
-                'Garmin Forerunner 245',
-                '\$255.00',
-                '\$300.00',
-                '-15%',
-                isDark,
-              ),
-            ],
-          ),
+          child: _isLoadingSale
+              ? ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: 3,
+                  itemBuilder: (context, index) => Padding(
+                    padding: EdgeInsets.only(right: index < 2 ? 16 : 0),
+                    child: const ProductCardSkeleton(),
+                  ),
+                )
+              : _saleProducts.isEmpty
+                  ? Center(
+                      child: Text(
+                        'No sale products available',
+                        style: TextStyle(
+                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                        ),
+                      ),
+                    )
+                  : ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: _saleProducts.length,
+                      separatorBuilder: (context, index) => const SizedBox(width: 16),
+                      itemBuilder: (context, index) {
+                        final product = _saleProducts[index];
+                        String imageUrl = '';
+                        if (product.images.isNotEmpty) {
+                          final firstImage = product.images[0];
+                          if (firstImage is String) {
+                            imageUrl = firstImage;
+                          } else if (firstImage is Map<String, dynamic>) {
+                            imageUrl = firstImage['url']?.toString() ?? 
+                                       firstImage['path']?.toString() ?? 
+                                       firstImage['image']?.toString() ?? '';
+                          }
+                        }
+                        final displayImageUrl = imageUrl.isEmpty
+                            ? 'https://via.placeholder.com/300x300/4A90E2/FFFFFF?text=${Uri.encodeComponent(product.name)}'
+                            : imageUrl;
+                        
+                        final discountText = product.discountPercentage > 0 
+                            ? '-${product.discountPercentage.toStringAsFixed(0)}%'
+                            : '';
+                        
+                        return _buildSaleCard(
+                          displayImageUrl,
+                          product.name,
+                          '${product.currency} ${product.finalPrice.toStringAsFixed(2)}',
+                          '${product.currency} ${product.price.toStringAsFixed(2)}',
+                          discountText,
+                          isDark,
+                          product,
+                        );
+                      },
+                    ),
         ),
       ],
     );
@@ -849,11 +892,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               TextButton(
                 onPressed: () {
-                  Navigator.pushNamed(
-                    context,
-                    '/products',
-                    arguments: {'category': 'new'},
-                  );
+                  Navigator.pushNamed(context, '/new-arrivals');
                 },
                 child: const Text(
                   'See All',
@@ -869,17 +908,17 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         SizedBox(
           height: 270,
-          child: _isLoadingNew
+          child: _isLoadingNewArrivals
               ? ListView.builder(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   itemCount: 3,
                   itemBuilder: (context, index) => const ProductCardSkeleton(),
                 )
-              : _newProducts.isEmpty
+              : _newArrivals.isEmpty
                   ? Center(
                       child: Text(
-                        'No new products available',
+                        'No new arrivals available',
                         style: TextStyle(
                           color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                         ),
@@ -888,10 +927,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   : ListView.separated(
                       scrollDirection: Axis.horizontal,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: _newProducts.length,
+                      itemCount: _newArrivals.length,
                       separatorBuilder: (context, index) => const SizedBox(width: 16),
                       itemBuilder: (context, index) {
-                        final product = _newProducts[index];
+                        final product = _newArrivals[index];
                         String imageUrl = '';
                         if (product.images.isNotEmpty) {
                           final firstImage = product.images[0];
@@ -1113,6 +1152,7 @@ class _HomeScreenState extends State<HomeScreen> {
     String originalPrice,
     String discount,
     bool isDark,
+    ProductModel? product,
   ) {
     return Container(
       width: 160,
@@ -1132,6 +1172,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Stack(
             children: [
@@ -1188,46 +1229,92 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: isDark ? Colors.white : Colors.grey.shade900,
-                    height: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Text(
-                      salePrice,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.red,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      originalPrice,
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Flexible(
+                    child: Text(
+                      name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey.shade400,
-                        decoration: TextDecoration.lineThrough,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: isDark ? Colors.white : Colors.grey.shade900,
+                        height: 1.2,
                       ),
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              salePrice,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.red,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              originalPrice,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade400,
+                                decoration: TextDecoration.lineThrough,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      InkWell(
+                        onTap: _isAddingToCart || product == null 
+                            ? null 
+                            : () => _addToCart(product),
+                        borderRadius: BorderRadius.circular(13),
+                        child: Container(
+                          width: 26,
+                          height: 26,
+                          decoration: BoxDecoration(
+                            color: _isAddingToCart 
+                                ? AppColors.primary.withOpacity(0.5)
+                                : AppColors.primary,
+                            shape: BoxShape.circle,
+                          ),
+                          child: _isAddingToCart
+                              ? const SizedBox(
+                                  width: 12,
+                                  height: 12,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.add,
+                                  size: 16,
+                                  color: Colors.white,
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ],

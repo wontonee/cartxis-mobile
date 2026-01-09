@@ -63,6 +63,54 @@ class ProductService {
     return dataList.map((json) => ProductModel.fromJson(json as Map<String, dynamic>)).toList();
   }
 
+  /// Get new arrivals
+  Future<List<ProductModel>> getNewArrivals({
+    int limit = 10,
+  }) async {
+    final response = await _apiClient.get(
+      ApiConfig.productsNewArrivals,
+      queryParameters: {
+        'limit': limit.toString(),
+      },
+    );
+
+    if (response['success'] == false) {
+      throw ApiException(
+        message: response['message'] ?? 'Failed to retrieve new arrivals',
+        code: response['error_code'] ?? 'PRODUCTS_FETCH_FAILED',
+        errors: response['errors'] as Map<String, dynamic>?,
+      );
+    }
+
+    // Parse the data array directly
+    final List<dynamic> dataList = response['data'] as List<dynamic>;
+    return dataList.map((json) => ProductModel.fromJson(json as Map<String, dynamic>)).toList();
+  }
+
+  /// Get on-sale products (flash sale)
+  Future<List<ProductModel>> getOnSaleProducts({
+    int limit = 10,
+  }) async {
+    final response = await _apiClient.get(
+      ApiConfig.productsOnSale,
+      queryParameters: {
+        'limit': limit.toString(),
+      },
+    );
+
+    if (response['success'] == false) {
+      throw ApiException(
+        message: response['message'] ?? 'Failed to retrieve sale products',
+        code: response['error_code'] ?? 'PRODUCTS_FETCH_FAILED',
+        errors: response['errors'] as Map<String, dynamic>?,
+      );
+    }
+
+    // Parse the data array directly
+    final List<dynamic> dataList = response['data'] as List<dynamic>;
+    return dataList.map((json) => ProductModel.fromJson(json as Map<String, dynamic>)).toList();
+  }
+
   /// Get new products
   Future<ProductsResponse> getNewProducts({
     int page = 1,

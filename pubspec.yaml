@@ -19,6 +19,7 @@ dependencies:
   intl: ^0.19.0
   razorpay_flutter: ^1.4.0
   flutter_stripe: ^11.2.0
+  image_picker: ^1.0.7
 
 dev_dependencies:
   flutter_test:

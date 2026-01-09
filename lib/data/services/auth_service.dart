@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/config/api_config.dart';
 import '../../core/network/api_client.dart';
@@ -228,9 +229,11 @@ class AuthService {
     }
 
     final response = await _apiClient.get(
-      ApiConfig.authMe,
+      ApiConfig.customerProfile,
       headers: headers,
     );
+
+    print('DEBUG: Profile API response: $response');
 
     // Check success first before parsing data
     if (response['success'] == false) {
@@ -241,10 +244,13 @@ class AuthService {
       );
     }
 
-    // Parse response
+    // Parse response - the API returns user data inside 'profile' key
     final apiResponse = ApiResponse<UserModel>.fromJson(
       response,
-      (data) => UserModel.fromJson(data as Map<String, dynamic>),
+      (data) {
+        final profileData = (data as Map<String, dynamic>)['profile'];
+        return UserModel.fromJson(profileData as Map<String, dynamic>);
+      },
     );
 
     if (!apiResponse.success || apiResponse.data == null) {
@@ -268,6 +274,7 @@ class AuthService {
     String? phone,
     String? dateOfBirth,
     String? gender,
+    File? avatar,
   }) async {
     final headers = await getAuthHeaders();
     
@@ -281,6 +288,53 @@ class AuthService {
     // Combine first and last name into full name
     final fullName = '${firstName.trim()} ${lastName.trim()}'.trim();
 
+    // If avatar is provided, use multipart request
+    if (avatar != null) {
+      final response = await _apiClient.postMultipart(
+        ApiConfig.customerProfile,
+        headers: headers,
+        fields: {
+          'name': fullName,
+          if (phone != null && phone.isNotEmpty) 'phone': phone,
+          if (dateOfBirth != null && dateOfBirth.isNotEmpty) 'date_of_birth': dateOfBirth,
+          if (gender != null && gender.isNotEmpty) 'gender': gender,
+          '_method': 'PUT',
+        },
+        files: {
+          'avatar': avatar,
+        },
+      );
+
+      // Check success
+      if (response['success'] == false) {
+        throw ApiException(
+          message: response['message'] ?? 'Failed to update profile',
+          code: response['error_code'] ?? 'PROFILE_UPDATE_FAILED',
+          errors: response['errors'] as Map<String, dynamic>?,
+        );
+      }
+
+      // Parse response
+      final apiResponse = ApiResponse<UserModel>.fromJson(
+        response,
+        (data) => UserModel.fromJson(data as Map<String, dynamic>),
+      );
+
+      if (!apiResponse.success || apiResponse.data == null) {
+        throw ApiException(
+          message: apiResponse.message,
+          code: apiResponse.errorCode ?? 'PROFILE_UPDATE_FAILED',
+        );
+      }
+
+      // Update stored user data
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_userKey, _userToJson(apiResponse.data!));
+
+      return apiResponse.data!;
+    }
+
+    // Regular PUT request without avatar
     final body = <String, dynamic>{
       'name': fullName,
     };
