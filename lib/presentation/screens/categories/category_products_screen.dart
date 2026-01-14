@@ -3,6 +3,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../data/models/product_model.dart';
 import '../../../data/services/product_service.dart';
 import '../../../data/services/cart_service.dart';
+import '../../../data/services/wishlist_service.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/price_text.dart';
 
@@ -23,6 +24,7 @@ class CategoryProductsScreen extends StatefulWidget {
 class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
   final ProductService _productService = ProductService();
   final CartService _cartService = CartService();
+  final WishlistService _wishlistService = WishlistService();
   final ScrollController _scrollController = ScrollController();
 
   List<ProductModel> _products = [];
@@ -33,6 +35,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
   String _selectedSort = 'created_at';
   String _selectedOrder = 'desc';
   bool _isAddingToCart = false;
+  bool _isGridView = true;
 
   @override
   void initState() {
@@ -74,7 +77,8 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
       if (mounted) {
         setState(() {
           _products = response.data;
-          _hasMore = (response.meta.currentPage ?? 0) < (response.meta.lastPage ?? 0);
+          _hasMore =
+              (response.meta.currentPage ?? 0) < (response.meta.lastPage ?? 0);
           _isLoading = false;
         });
       }
@@ -113,7 +117,8 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
       if (mounted) {
         setState(() {
           _products.addAll(response.data);
-          _hasMore = (response.meta.currentPage ?? 0) < (response.meta.lastPage ?? 0);
+          _hasMore =
+              (response.meta.currentPage ?? 0) < (response.meta.lastPage ?? 0);
           _isLoadingMore = false;
         });
       }
@@ -208,44 +213,95 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
     }
   }
 
+  Future<void> _toggleWishlist(ProductModel product) async {
+    try {
+      await _wishlistService.addToWishlist(product.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${product.name} added to wishlist'),
+            backgroundColor: AppColors.primary,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        String errorMessage;
+        final errorString = e.toString().toLowerCase();
+        
+        if (errorString.contains('already') && errorString.contains('wishlist')) {
+          errorMessage = '${product.name} is already in your wishlist';
+        } else if (errorString.contains('network') || errorString.contains('connection')) {
+          errorMessage = 'Network error. Please check your connection';
+        } else if (errorString.contains('unauthorized') || errorString.contains('401')) {
+          errorMessage = 'Please login to add items to wishlist';
+        } else {
+          errorMessage = 'Unable to add to wishlist. Please try again';
+        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.orange.shade700,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
   void _showSortOptions() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (context) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
-        return Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF182430) : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Sort By',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : Colors.grey.shade900,
-                ),
+        final bottomInset = MediaQuery.of(context).viewPadding.bottom;
+        return SafeArea(
+          top: false,
+          child: Container(
+            padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottomInset),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF182430) : Colors.white,
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Sort By',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.grey.shade900,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSortOption(
+                      'Price: Low to High', 'price', 'asc', isDark),
+                  _buildSortOption(
+                      'Price: High to Low', 'price', 'desc', isDark),
+                  _buildSortOption('Name: A to Z', 'name', 'asc', isDark),
+                  _buildSortOption('Name: Z to A', 'name', 'desc', isDark),
+                  _buildSortOption(
+                      'Newest First', 'created_at', 'desc', isDark),
+                  _buildSortOption(
+                      'Oldest First', 'created_at', 'asc', isDark),
+                ],
               ),
-              const SizedBox(height: 16),
-              _buildSortOption('Price: Low to High', 'price', 'asc', isDark),
-              _buildSortOption('Price: High to Low', 'price', 'desc', isDark),
-              _buildSortOption('Name: A to Z', 'name', 'asc', isDark),
-              _buildSortOption('Name: Z to A', 'name', 'desc', isDark),
-              _buildSortOption('Newest First', 'created_at', 'desc', isDark),
-              _buildSortOption('Oldest First', 'created_at', 'asc', isDark),
-            ],
+            ),
           ),
         );
       },
     );
   }
 
-  Widget _buildSortOption(String label, String sort, String order, bool isDark) {
+  Widget _buildSortOption(
+      String label, String sort, String order, bool isDark) {
     final isSelected = _selectedSort == sort && _selectedOrder == order;
     return ListTile(
       title: Text(
@@ -257,9 +313,8 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
               : (isDark ? Colors.white : Colors.grey.shade900),
         ),
       ),
-      trailing: isSelected
-          ? const Icon(Icons.check, color: AppColors.primary)
-          : null,
+      trailing:
+          isSelected ? const Icon(Icons.check, color: AppColors.primary) : null,
       onTap: () {
         setState(() {
           _selectedSort = sort;
@@ -276,7 +331,8 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF101922) : const Color(0xFFF6F7F8),
+      backgroundColor:
+          isDark ? const Color(0xFF101922) : const Color(0xFFF6F7F8),
       appBar: AppBar(
         backgroundColor: isDark ? const Color(0xFF182430) : Colors.white,
         elevation: 0,
@@ -296,16 +352,16 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
         ),
         actions: [
           IconButton(
-            onPressed: _showSortOptions,
+            onPressed: () => setState(() => _isGridView = !_isGridView),
             icon: Icon(
-              Icons.sort,
+              _isGridView ? Icons.view_list : Icons.grid_view,
               color: isDark ? Colors.white : Colors.grey.shade900,
             ),
           ),
           IconButton(
-            onPressed: () => Navigator.pushNamed(context, '/cart'),
+            onPressed: _showSortOptions,
             icon: Icon(
-              Icons.shopping_cart_outlined,
+              Icons.sort,
               color: isDark ? Colors.white : Colors.grey.shade900,
             ),
           ),
@@ -320,9 +376,11 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
       return Padding(
         padding: const EdgeInsets.all(16.0),
         child: GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 0.7,
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: _isGridView ? 2 : 1,
+            // Fixed heights prevent RenderFlex overflows when the image + details
+            // exceed the computed height (this was happening in list mode).
+            mainAxisExtent: _isGridView ? 300 : 230,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
           ),
@@ -369,9 +427,11 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
       child: GridView.builder(
         controller: _scrollController,
         padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.7,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: _isGridView ? 2 : 1,
+          // Fixed heights prevent RenderFlex overflows when the image + details
+          // exceed the computed height (this was happening in list mode).
+          mainAxisExtent: _isGridView ? 300 : 230,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
         ),
@@ -400,9 +460,10 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
       if (firstImage is String) {
         imageUrl = firstImage;
       } else if (firstImage is Map<String, dynamic>) {
-        imageUrl = firstImage['url']?.toString() ?? 
-                   firstImage['path']?.toString() ?? 
-                   firstImage['image']?.toString() ?? '';
+        imageUrl = firstImage['url']?.toString() ??
+            firstImage['path']?.toString() ??
+            firstImage['image']?.toString() ??
+            '';
       }
     }
 
@@ -500,6 +561,26 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                       ),
                     ),
                   ),
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: GestureDetector(
+                    onTap: () => _toggleWishlist(product),
+                    child: Container(
+                      width: 30,
+                      height: 30,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.8),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.favorite_border,
+                        size: 18,
+                        color: Colors.grey.shade400,
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
             // Product Details
@@ -521,7 +602,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                   const SizedBox(height: 4),
                   if (product.brand != null)
                     Text(
-                      product.brand is Map<String, dynamic> 
+                      product.brand is Map<String, dynamic>
                           ? (product.brand['name']?.toString() ?? '')
                           : product.brand.toString(),
                       style: TextStyle(

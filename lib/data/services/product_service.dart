@@ -21,8 +21,9 @@ class ProductService {
       queryParameters: {
         'page': page.toString(),
         'per_page': perPage.toString(),
-        'sort': sort,
-        'order': order,
+        // API expects sort_by/sort_order
+        'sort_by': sort,
+        'sort_order': order,
       },
     );
 
@@ -42,12 +43,29 @@ class ProductService {
   /// Get featured products
   Future<List<ProductModel>> getFeaturedProducts({
     int limit = 10,
+    int? categoryId,
   }) async {
+    // Use the unified products listing endpoint so we can filter via query params.
+    // Matches API docs: /api/v1/products?featured=true&category_ids=...
+    final queryParams = <String, String>{
+      'page': '1',
+      'per_page': limit.toString(),
+      'featured': 'true',
+      'sort_by': 'created_at',
+      'sort_order': 'desc',
+    };
+
+    if (categoryId != null) {
+      // API supports category_ids (comma-separated). Use single id for Home filter.
+      queryParams['category_ids'] = categoryId.toString();
+      print('🔍 ProductService: Fetching featured products with category_ids=$categoryId');
+    } else {
+      print('🔍 ProductService: Fetching all featured products (no category filter)');
+    }
+
     final response = await _apiClient.get(
-      ApiConfig.productsFeatured,
-      queryParameters: {
-        'limit': limit.toString(),
-      },
+      ApiConfig.products,
+      queryParameters: queryParams,
     );
 
     if (response['success'] == false) {
@@ -58,20 +76,36 @@ class ProductService {
       );
     }
 
-    // Parse the data array directly
-    final List<dynamic> dataList = response['data'] as List<dynamic>;
-    return dataList.map((json) => ProductModel.fromJson(json as Map<String, dynamic>)).toList();
+    final parsed = ProductsResponse.fromJson(response);
+    print('📦 API Response for featured products: ${parsed.data.length} products');
+    return parsed.data;
   }
 
   /// Get new arrivals
   Future<List<ProductModel>> getNewArrivals({
     int limit = 10,
+    int? categoryId,
   }) async {
+    // Prefer unified products listing endpoint so category filter works.
+    // The backend uses `is_new=1` (see getNewProducts()).
+    final queryParams = <String, String>{
+      'page': '1',
+      'per_page': limit.toString(),
+      'is_new': '1',
+      'sort_by': 'created_at',
+      'sort_order': 'desc',
+    };
+
+    if (categoryId != null) {
+      queryParams['category_ids'] = categoryId.toString();
+      print('🔍 ProductService: Fetching new arrivals with category_ids=$categoryId');
+    } else {
+      print('🔍 ProductService: Fetching new arrivals (no category filter)');
+    }
+
     final response = await _apiClient.get(
-      ApiConfig.productsNewArrivals,
-      queryParameters: {
-        'limit': limit.toString(),
-      },
+      ApiConfig.products,
+      queryParameters: queryParams,
     );
 
     if (response['success'] == false) {
@@ -82,20 +116,65 @@ class ProductService {
       );
     }
 
-    // Parse the data array directly
-    final List<dynamic> dataList = response['data'] as List<dynamic>;
-    return dataList.map((json) => ProductModel.fromJson(json as Map<String, dynamic>)).toList();
+    final parsed = ProductsResponse.fromJson(response);
+    // Fallback for older backends that only support /products/new-arrivals
+    if (parsed.data.isEmpty) {
+      final fallbackParams = <String, String>{
+        'page': '1',
+        'per_page': limit.toString(),
+        'sort_by': 'created_at',
+        'sort_order': 'desc',
+      };
+
+      if (categoryId != null) {
+        // Some endpoints use category_id, some use category_ids; try category_ids first.
+        fallbackParams['category_ids'] = categoryId.toString();
+      }
+
+      final fallbackResponse = await _apiClient.get(
+        ApiConfig.productsNewArrivals,
+        queryParameters: fallbackParams,
+      );
+
+      if (fallbackResponse['success'] == false) {
+        throw ApiException(
+          message: fallbackResponse['message'] ?? 'Failed to retrieve new arrivals',
+          code: fallbackResponse['error_code'] ?? 'PRODUCTS_FETCH_FAILED',
+          errors: fallbackResponse['errors'] as Map<String, dynamic>?,
+        );
+      }
+
+      return ProductsResponse.fromJson(fallbackResponse).data;
+    }
+
+    return parsed.data;
   }
 
   /// Get on-sale products (flash sale)
   Future<List<ProductModel>> getOnSaleProducts({
     int limit = 10,
+    int? categoryId,
   }) async {
+    // Prefer unified products listing endpoint so category filter works.
+    final queryParams = <String, String>{
+      'page': '1',
+      'per_page': limit.toString(),
+      // Most backends use on_sale=1/0.
+      'on_sale': '1',
+      'sort_by': 'created_at',
+      'sort_order': 'desc',
+    };
+
+    if (categoryId != null) {
+      queryParams['category_ids'] = categoryId.toString();
+      print('🔍 ProductService: Fetching on-sale products with category_ids=$categoryId');
+    } else {
+      print('🔍 ProductService: Fetching on-sale products (no category filter)');
+    }
+
     final response = await _apiClient.get(
-      ApiConfig.productsOnSale,
-      queryParameters: {
-        'limit': limit.toString(),
-      },
+      ApiConfig.products,
+      queryParameters: queryParams,
     );
 
     if (response['success'] == false) {
@@ -106,9 +185,37 @@ class ProductService {
       );
     }
 
-    // Parse the data array directly
-    final List<dynamic> dataList = response['data'] as List<dynamic>;
-    return dataList.map((json) => ProductModel.fromJson(json as Map<String, dynamic>)).toList();
+    final parsed = ProductsResponse.fromJson(response);
+    // Fallback for older backends that only support /products/on-sale
+    if (parsed.data.isEmpty) {
+      final fallbackParams = <String, String>{
+        'page': '1',
+        'per_page': limit.toString(),
+        'sort_by': 'created_at',
+        'sort_order': 'desc',
+      };
+
+      if (categoryId != null) {
+        fallbackParams['category_ids'] = categoryId.toString();
+      }
+
+      final fallbackResponse = await _apiClient.get(
+        ApiConfig.productsOnSale,
+        queryParameters: fallbackParams,
+      );
+
+      if (fallbackResponse['success'] == false) {
+        throw ApiException(
+          message: fallbackResponse['message'] ?? 'Failed to retrieve sale products',
+          code: fallbackResponse['error_code'] ?? 'PRODUCTS_FETCH_FAILED',
+          errors: fallbackResponse['errors'] as Map<String, dynamic>?,
+        );
+      }
+
+      return ProductsResponse.fromJson(fallbackResponse).data;
+    }
+
+    return parsed.data;
   }
 
   /// Get new products
@@ -122,8 +229,9 @@ class ProductService {
         'page': page.toString(),
         'per_page': perPage.toString(),
         'is_new': '1',
-        'sort': 'created_at',
-        'order': 'desc',
+        // API expects sort_by/sort_order
+        'sort_by': 'created_at',
+        'sort_order': 'desc',
       },
     );
 
@@ -151,8 +259,9 @@ class ProductService {
       queryParameters: {
         'page': page.toString(),
         'per_page': perPage.toString(),
-        'sort': sort,
-        'order': order,
+        // API expects sort_by/sort_order
+        'sort_by': sort,
+        'sort_order': order,
       },
     );
 

@@ -33,6 +33,12 @@ class ApiClient {
       final uri = Uri.parse(ApiConfig.getFullUrl(endpoint))
           .replace(queryParameters: queryParameters);
 
+      if (!ApiConfig.isProduction) {
+        // Useful for verifying filter params like category_ids/sort_by/sort_order.
+        // Keep it lightweight: don't print headers or bodies.
+        print('🌐 GET $uri');
+      }
+
       final response = await _client
           .get(
             uri,

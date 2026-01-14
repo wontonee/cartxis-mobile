@@ -5,7 +5,8 @@ class AppStrings {
   // App Info
   static const String appName = 'Vortex';
   static const String appTagline = 'eCommerce';
-  static const String appVersion = 'v2.4.0';
+    // Update this value to change the displayed app version across the UI.
+    static const String appVersion = '1.0';
   static const String poweredBy = 'Powered by Vortex API';
 
   // Splash Screen

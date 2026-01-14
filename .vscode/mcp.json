@@ -19,8 +19,17 @@
         "mcp-server",
         "--force-roots-fallback"
       ],
-      "env": {}
+      "env": {
+        "DTD_URI": "${input:dtdUri}"
+      }
     }
   },
-  "inputs": []
+  "inputs": [
+    {
+      "id": "dtdUri",
+      "type": "promptString",
+      "description": "Dart Tooling Daemon (DTD) URI (run 'Dart: Copy DTD Uri to Clipboard' then paste).",
+      "default": "ws://127.0.0.1:51953/ROTVhJanxDc="
+    }
+  ]
 }

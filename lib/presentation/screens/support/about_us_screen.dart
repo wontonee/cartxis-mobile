@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_strings.dart';
 
 class AboutUsScreen extends StatelessWidget {
   const AboutUsScreen({super.key});
@@ -98,7 +99,7 @@ class AboutUsScreen extends StatelessWidget {
                     // Version
                     Center(
                       child: Text(
-                        'Version 2.4.0',
+                        'Version ${AppStrings.appVersion}',
                         style: TextStyle(
                           fontSize: 14,
                           color: isDark

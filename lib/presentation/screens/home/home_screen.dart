@@ -3,8 +3,11 @@ import 'package:vortex_app/core/constants/app_colors.dart';
 import 'package:vortex_app/data/services/product_service.dart';
 import 'package:vortex_app/data/services/category_service.dart';
 import 'package:vortex_app/data/services/cart_service.dart';
+import 'package:vortex_app/data/services/wishlist_service.dart';
+import 'package:vortex_app/data/services/banner_service.dart';
 import 'package:vortex_app/data/models/product_model.dart';
 import 'package:vortex_app/data/models/category_model.dart';
+import 'package:vortex_app/data/models/banner_model.dart';
 import '../../widgets/price_text.dart';
 import '../../widgets/skeleton_loader.dart';
 
@@ -21,28 +24,64 @@ class _HomeScreenState extends State<HomeScreen> {
   final _productService = ProductService();
   final _categoryService = CategoryService();
   final _cartService = CartService();
+  final _wishlistService = WishlistService();
+  final _bannerService = BannerService();
   
   List<ProductModel> _featuredProducts = [];
   List<ProductModel> _newArrivals = [];
   List<ProductModel> _saleProducts = [];
-  List<ProductModel> _allProducts = [];
   List<CategoryModel> _categories = [];
+  List<BannerModel> _homeBanners = [];
   
   bool _isLoadingFeatured = true;
   bool _isLoadingNewArrivals = true;
   bool _isLoadingSale = true;
-  bool _isLoadingAll = true;
   bool _isLoadingCategories = true;
+  bool _isLoadingBanners = true;
   bool _isAddingToCart = false; // Prevent duplicate add to cart calls
   
-  int _currentPage = 1;
-  bool _hasMore = true;
+  int? _selectedCategoryId; // null means 'All'
 
   @override
   void initState() {
     super.initState();
     _loadProducts();
     _loadCategories();
+    _loadBanners();
+  }
+
+  Future<void> _loadBanners() async {
+    try {
+      setState(() {
+        _isLoadingBanners = true;
+      });
+
+      print('🖼️ Loading home hero banners...');
+      final banners = await _bannerService.getHomeHeroBanners(limit: 2);
+      print('🖼️ Banners fetched: ${banners.length}');
+
+      if (!mounted) return;
+      setState(() {
+        // Keep only banners with images; fallback UI will be used if empty.
+        _homeBanners = banners.where((b) => b.imageUrl.trim().isNotEmpty).toList();
+        _isLoadingBanners = false;
+      });
+    } catch (e) {
+      print('🖼️ Error loading banners: $e');
+      if (!mounted) return;
+      setState(() {
+        _homeBanners = [];
+        _isLoadingBanners = false;
+      });
+    }
+  }
+
+  Future<void> _refreshHome() async {
+    await Future.wait([
+      _loadBanners(),
+      _loadCategories(),
+      _loadProducts(),
+    ]);
   }
 
   Future<void> _loadProducts() async {
@@ -50,7 +89,6 @@ class _HomeScreenState extends State<HomeScreen> {
       _loadFeaturedProducts(),
       _loadNewArrivals(),
       _loadSaleProducts(),
-      _loadAllProducts(),
     ]);
   }
 
@@ -83,9 +121,12 @@ class _HomeScreenState extends State<HomeScreen> {
         _isLoadingFeatured = true;
       });
 
+      print('🔍 Loading featured products with categoryId: $_selectedCategoryId');
       final products = await _productService.getFeaturedProducts(
         limit: 10,
+        categoryId: _selectedCategoryId,
       );
+      print('✅ Loaded ${products.length} featured products');
       
       if (mounted) {
         setState(() {
@@ -94,6 +135,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
+      print('❌ Error loading featured products: $e');
       if (mounted) {
         setState(() {
           _isLoadingFeatured = false;
@@ -108,8 +150,10 @@ class _HomeScreenState extends State<HomeScreen> {
         _isLoadingNewArrivals = true;
       });
 
+      print('🔍 Loading new arrivals with categoryId: $_selectedCategoryId');
       final products = await _productService.getNewArrivals(
         limit: 10,
+        categoryId: _selectedCategoryId,
       );
       
       if (mounted) {
@@ -133,8 +177,10 @@ class _HomeScreenState extends State<HomeScreen> {
         _isLoadingSale = true;
       });
 
+      print('🔍 Loading on-sale products with categoryId: $_selectedCategoryId');
       final products = await _productService.getOnSaleProducts(
         limit: 10,
+        categoryId: _selectedCategoryId,
       );
       
       if (mounted) {
@@ -147,39 +193,6 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         setState(() {
           _isLoadingSale = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _loadAllProducts() async {
-    try {
-      setState(() {
-        _isLoadingAll = true;
-      });
-
-      final response = await _productService.getProducts(
-        page: _currentPage,
-        perPage: 20,
-        sort: 'created_at',
-        order: 'desc',
-      );
-      
-      if (mounted) {
-        setState(() {
-          if (_currentPage == 1) {
-            _allProducts = response.data;
-          } else {
-            _allProducts.addAll(response.data);
-          }
-          _hasMore = response.meta.currentPage < response.meta.lastPage;
-          _isLoadingAll = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoadingAll = false;
         });
       }
     }
@@ -278,6 +291,46 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _toggleWishlist(ProductModel product) async {
+    print('DEBUG: _toggleWishlist called for product: ${product.name} (ID: ${product.id})');
+    try {
+      await _wishlistService.addToWishlist(product.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${product.name} added to wishlist'),
+            backgroundColor: AppColors.primary,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      print('DEBUG: Error adding to wishlist: $e');
+      if (mounted) {
+        String errorMessage;
+        final errorString = e.toString().toLowerCase();
+        
+        if (errorString.contains('already') && errorString.contains('wishlist')) {
+          errorMessage = '${product.name} is already in your wishlist';
+        } else if (errorString.contains('network') || errorString.contains('connection')) {
+          errorMessage = 'Network error. Please check your connection';
+        } else if (errorString.contains('unauthorized') || errorString.contains('401')) {
+          errorMessage = 'Please login to add items to wishlist';
+        } else {
+          errorMessage = 'Unable to add to wishlist. Please try again';
+        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.orange.shade700,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -294,33 +347,37 @@ class _HomeScreenState extends State<HomeScreen> {
 
           // Main Content
           Expanded(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 16),
-                  
-                  // Banner Slider
-                  _buildBannerSlider(),
-                  
-                  const SizedBox(height: 8),
-                  
-                  // Category Chips
-                  _buildCategoryChips(isDark),
-                  
-                  const SizedBox(height: 8),
-                  
-                  // Featured Products
-                  _buildFeaturedProducts(isDark),
-                  
-                  // Flash Sale
-                  _buildFlashSale(isDark),
-                  
-                  // New Arrivals
-                  _buildNewArrivals(isDark),
-                  
-                  const SizedBox(height: 20),
-                ],
+            child: RefreshIndicator(
+              onRefresh: _refreshHome,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 16),
+                    
+                    // Banner Slider
+                    _buildBannerSlider(),
+                    
+                    const SizedBox(height: 8),
+                    
+                    // Category Chips
+                    _buildCategoryChips(isDark),
+                    
+                    const SizedBox(height: 8),
+                    
+                    // Featured Products
+                    _buildFeaturedProducts(isDark),
+                    
+                    // Flash Sale
+                    _buildFlashSale(isDark),
+                    
+                    // New Arrivals
+                    _buildNewArrivals(isDark),
+                    
+                    const SizedBox(height: 20),
+                  ],
+                ),
               ),
             ),
           ),
@@ -384,6 +441,37 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           
           const SizedBox(width: 12),
+
+          // Refresh Icon
+          GestureDetector(
+            onTap: _refreshHome,
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1A2633) : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isDark ? Colors.grey.shade700 : Colors.grey.shade200,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 4,
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.refresh,
+                  color: isDark ? Colors.grey.shade300 : Colors.grey.shade600,
+                  size: 22,
+                ),
+              ),
+            ),
+          ),
+          
+          const SizedBox(width: 12),
           
           // Notification Icon
           Container(
@@ -436,28 +524,72 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildBannerSlider() {
+    final fallbackBanners = <BannerModel>[
+      const BannerModel(
+        identifier: 'mobile-home-hero-summer-sale',
+        imageUrl:
+            'https://lh3.googleusercontent.com/aida-public/AB6AXuDZOJapra7fy6BAM2iHLk9hSxtELNcnNARwEiqlK9sD3o8I0_A38Nqual6NZ4N8pmVIQBJJkPLpu0pHB_8eLIzvEqMzvXxOTDxx0uLfV2sF1P-T1TMv_Py-B1ZP-hM8hLRF2BbBiKCmmxC3weWN0rTgwAoP8UJPklNM_GKD_cD2O8qWl_GGRfF5eMytCo8ZbG39l_a-OdMb7C-HdSyU7CCzshPBlzcXJtEGjw9nIhbW5Qwwny5mSKL1h5fiDv-ofgkeG95o4Y-J9hWm',
+        badge: 'PROMO',
+        title: 'Summer Sale',
+        subtitle: 'Up to 50% Off Electronics',
+        placement: 'home-hero',
+      ),
+      const BannerModel(
+        identifier: 'mobile-home-hero-fashion-week',
+        imageUrl:
+            'https://lh3.googleusercontent.com/aida-public/AB6AXuCy0yJAkZq9Kf7iSGQAHsL1hW-VddU370wK0zu9ElzV0TGfbGcKLLu9mXoHSNxRBSmsXw-QsQ1UeC0MKs6N0r0Roa4WiGiAsmwsuF8Cou15aV0s8HS-dmH80W0RuHAGRj84j9R0jvSNjxII0zTuNUQGrTuXlGtUsEY8iiMMQUBoPYQxPylkdJuSRG85fUtX9jf-9YoFPbaFOTIXydlPjjcY6h9dKmziCjJOBlOGuaaftHPrNW6jkX1tR5d2xBvvYdEBmSFfRBHZRbK_',
+        badge: 'NEW',
+        title: 'Fashion Week',
+        subtitle: 'Trending Styles 2023',
+        placement: 'home-hero',
+      ),
+    ];
+
     return SizedBox(
       height: 160,
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        children: [
-          _buildBannerCard(
-            'https://lh3.googleusercontent.com/aida-public/AB6AXuDZOJapra7fy6BAM2iHLk9hSxtELNcnNARwEiqlK9sD3o8I0_A38Nqual6NZ4N8pmVIQBJJkPLpu0pHB_8eLIzvEqMzvXxOTDxx0uLfV2sF1P-T1TMv_Py-B1ZP-hM8hLRF2BbBiKCmmxC3weWN0rTgwAoP8UJPklNM_GKD_cD2O8qWl_GGRfF5eMytCo8ZbG39l_a-OdMb7C-HdSyU7CCzshPBlzcXJtEGjw9nIhbW5Qwwny5mSKL1h5fiDv-ofgkeG95o4Y-J9hWm',
-            'PROMO',
-            'Summer Sale',
-            'Up to 50% Off Electronics',
-            Colors.black.withOpacity(0.6),
-          ),
-          const SizedBox(width: 16),
-          _buildBannerCard(
-            'https://lh3.googleusercontent.com/aida-public/AB6AXuCy0yJAkZq9Kf7iSGQAHsL1hW-VddU370wK0zu9ElzV0TGfbGcKLLu9mXoHSNxRBSmsXw-QsQ1UeC0MKs6N0r0Roa4WiGiAsmwsuF8Cou15aV0s8HS-dmH80W0RuHAGRj84j9R0jvSNjxII0zTuNUQGrTuXlGtUsEY8iiMMQUBoPYQxPylkdJuSRG85fUtX9jf-9YoFPbaFOTIXydlPjjcY6h9dKmziCjJOBlOGuaaftHPrNW6jkX1tR5d2xBvvYdEBmSFfRBHZRbK_',
-            'NEW',
-            'Fashion Week',
-            'Trending Styles 2023',
-            const Color(0xFF581C87).withOpacity(0.6),
-          ),
-        ],
+        children: _buildBannerSliderChildren(
+          // Don’t leave the hero area looking “empty” while banners load.
+          // API banners replace fallback as soon as they arrive.
+          _homeBanners.isNotEmpty ? _homeBanners : fallbackBanners,
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildBannerSliderChildren(List<BannerModel> banners) {
+    final widgets = <Widget>[];
+    for (var i = 0; i < banners.length; i++) {
+      final b = banners[i];
+      final overlayColor = (b.badge.toUpperCase() == 'PROMO')
+          ? Colors.black.withOpacity(0.6)
+          : const Color(0xFF581C87).withOpacity(0.6);
+
+      widgets.add(
+        _buildBannerCard(
+          b.imageUrl,
+          b.badge.isEmpty ? ' ' : b.badge,
+          b.title.isEmpty ? ' ' : b.title,
+          b.subtitle.isEmpty ? ' ' : b.subtitle,
+          overlayColor,
+        ),
+      );
+
+      if (i != banners.length - 1) {
+        widgets.add(const SizedBox(width: 16));
+      }
+    }
+    return widgets;
+  }
+
+  Widget _buildBannerSkeletonCard() {
+    return Container(
+      width: MediaQuery.of(context).size.width * 0.85,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade200,
+        borderRadius: BorderRadius.circular(16),
       ),
     );
   }
@@ -499,57 +631,61 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
+                  begin: Alignment.bottomLeft,
+                  end: Alignment.topRight,
                   colors: [
                     overlayColor,
                     Colors.transparent,
                   ],
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: badge == 'PROMO'
+                            ? AppColors.primary
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        badge,
+                        style: TextStyle(
+                          color: badge == 'PROMO'
+                              ? Colors.white
+                              : const Color(0xFF581C87),
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
-                    decoration: BoxDecoration(
-                      color: badge == 'PROMO' ? AppColors.primary : Colors.white,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      badge,
-                      style: TextStyle(
-                        color: badge == 'PROMO' ? Colors.white : const Color(0xFF581C87),
-                        fontSize: 10,
+                    const SizedBox(height: 8),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],
@@ -618,7 +754,8 @@ class _HomeScreenState extends State<HomeScreen> {
         itemCount: allCategories.length > 6 ? 6 : allCategories.length,
         itemBuilder: (context, index) {
           final category = allCategories[index];
-          final isSelected = index == 0; // First item (All) is selected by default
+          final categoryId = category['id'] as int;
+          final isSelected = _selectedCategoryId == null && categoryId == 0 || _selectedCategoryId == categoryId;
           
           return Padding(
             padding: const EdgeInsets.only(right: 12),
@@ -648,12 +785,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               onSelected: (bool value) {
-                // TODO: Navigate to product list screen with category filter
-                // Navigator.pushNamed(
-                //   context,
-                //   '/products',
-                //   arguments: {'category': category['slug']},
-                // );
+                setState(() {
+                  _selectedCategoryId = categoryId == 0 ? null : categoryId;
+                });
+                _loadProducts();
               },
               backgroundColor: isDark ? const Color(0xFF1A2633) : Colors.white,
               selectedColor: AppColors.primary,
@@ -1029,17 +1164,20 @@ class _HomeScreenState extends State<HomeScreen> {
               Positioned(
                 top: 8,
                 right: 8,
-                child: Container(
-                  width: 30,
-                  height: 30,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.8),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.favorite_border,
-                    size: 18,
-                    color: Colors.grey.shade400,
+                child: GestureDetector(
+                  onTap: product == null ? null : () => _toggleWishlist(product),
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.8),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.favorite_border,
+                      size: 18,
+                      color: Colors.grey.shade400,
+                    ),
                   ),
                 ),
               ),
@@ -1213,17 +1351,20 @@ class _HomeScreenState extends State<HomeScreen> {
               Positioned(
                 top: 8,
                 right: 8,
-                child: Container(
-                  width: 30,
-                  height: 30,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.8),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.favorite_border,
-                    size: 18,
-                    color: Colors.grey.shade400,
+                child: GestureDetector(
+                  onTap: product == null ? null : () => _toggleWishlist(product),
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.8),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.favorite_border,
+                      size: 18,
+                      color: Colors.grey.shade400,
+                    ),
                   ),
                 ),
               ),

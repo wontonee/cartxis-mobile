@@ -9,7 +9,7 @@ import '../../widgets/price_text.dart';
 class CartScreen extends StatefulWidget {
   final VoidCallback? onCartChanged;
   final VoidCallback? onContinueShopping;
-  
+
   const CartScreen({super.key, this.onCartChanged, this.onContinueShopping});
 
   @override
@@ -20,7 +20,7 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
   final _couponController = TextEditingController();
   final CartService _cartService = CartService();
   final CheckoutService _checkoutService = CheckoutService();
-  
+
   CartModel? _cart;
   bool _isLoading = true;
   String? _error;
@@ -78,7 +78,7 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
       }
     }
   }
-  
+
   // Public method to refresh cart from parent
   void refreshCart() {
     _loadCart();
@@ -94,7 +94,7 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
       );
       _loadCart(); // Reload cart
       widget.onCartChanged?.call();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -141,7 +141,7 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
         await _cartService.removeFromCart(cartItemId);
         _loadCart();
         widget.onCartChanged?.call();
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -179,7 +179,8 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF101922) : const Color(0xFFF6F7F8),
+      backgroundColor:
+          isDark ? const Color(0xFF101922) : const Color(0xFFF6F7F8),
       appBar: AppBar(
         backgroundColor: isDark ? const Color(0xFF101922) : Colors.white,
         elevation: 0,
@@ -212,7 +213,8 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(context, true),
-                        style: TextButton.styleFrom(foregroundColor: Colors.red),
+                        style:
+                            TextButton.styleFrom(foregroundColor: Colors.red),
                         child: const Text('Clear'),
                       ),
                     ],
@@ -285,7 +287,8 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
               onPressed: _loadCart,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
               ),
               child: const Text('Retry'),
             ),
@@ -331,7 +334,8 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
               label: const Text('Continue Shopping'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               ),
             ),
           ],
@@ -347,9 +351,9 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
         children: [
           // Cart Items
           ..._cart!.items.map((item) => _buildCartItem(item, isDark)),
-          
+
           const SizedBox(height: 16),
-          
+
           // Summary Card
           _buildSummaryCard(isDark),
         ],
@@ -385,7 +389,7 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
                 color: isDark ? const Color(0xFF0D1B2A) : Colors.grey.shade100,
                 child: item.product.images.isNotEmpty
                     ? Image.network(
-                        item.product.images.first.imageUrl,
+                        _getImageUrl(item.product.images.first),
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
                           return Icon(
@@ -402,9 +406,9 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
                       ),
               ),
             ),
-            
+
             const SizedBox(width: 12),
-            
+
             // Product Details
             Expanded(
               child: Column(
@@ -434,14 +438,17 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
                       Container(
                         decoration: BoxDecoration(
                           border: Border.all(
-                            color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+                            color: isDark
+                                ? Colors.grey.shade700
+                                : Colors.grey.shade300,
                           ),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           children: [
                             InkWell(
-                              onTap: () => _updateQuantity(item.id, item.quantity - 1),
+                              onTap: () =>
+                                  _updateQuantity(item.id, item.quantity - 1),
                               child: Container(
                                 padding: const EdgeInsets.all(6),
                                 child: Icon(
@@ -452,7 +459,8 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
                               child: Text(
                                 '${item.quantity}',
                                 style: TextStyle(
@@ -463,7 +471,8 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
                               ),
                             ),
                             InkWell(
-                              onTap: () => _updateQuantity(item.id, item.quantity + 1),
+                              onTap: () =>
+                                  _updateQuantity(item.id, item.quantity + 1),
                               child: Container(
                                 padding: const EdgeInsets.all(6),
                                 child: const Icon(
@@ -476,7 +485,7 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
                           ],
                         ),
                       ),
-                      
+
                       // Subtotal and Remove
                       Row(
                         children: [
@@ -492,7 +501,8 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
                               color: Colors.red.shade400,
                               size: 20,
                             ),
-                            onPressed: () => _removeItem(item.id, item.product.name),
+                            onPressed: () =>
+                                _removeItem(item.id, item.product.name),
                           ),
                         ],
                       ),
@@ -568,7 +578,8 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
     );
   }
 
-  Widget _buildSummaryRow(String label, double amount, bool isDark, {bool isDiscount = false, bool isTotal = false}) {
+  Widget _buildSummaryRow(String label, double amount, bool isDark,
+      {bool isDiscount = false, bool isTotal = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -646,7 +657,8 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
                               height: 16,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor:
+                                    AlwaysStoppedAnimation<Color>(Colors.white),
                               ),
                             ),
                             SizedBox(width: 12),
@@ -659,15 +671,16 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
                     );
 
                     final checkoutData = await _checkoutService.initCheckout();
-                    
+
                     if (mounted) {
                       ScaffoldMessenger.of(context).clearSnackBars();
-                      
+
                       // Navigate to checkout screen
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => CheckoutScreen(checkoutData: checkoutData),
+                          builder: (_) =>
+                              CheckoutScreen(checkoutData: checkoutData),
                         ),
                       );
                     }
@@ -703,5 +716,14 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
         ),
       ),
     );
+  }
+
+  String _getImageUrl(dynamic image) {
+    if (image is String) {
+      return image;
+    } else if (image is Map<String, dynamic>) {
+      return image['path']?.toString() ?? '';
+    }
+    return '';
   }
 }

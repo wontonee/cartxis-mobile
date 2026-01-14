@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:vortex_app/core/constants/app_colors.dart';
 import 'package:vortex_app/data/services/product_service.dart';
 import 'package:vortex_app/data/services/cart_service.dart';
+import 'package:vortex_app/data/services/wishlist_service.dart';
 import 'package:vortex_app/data/models/product_model.dart';
 import 'package:vortex_app/presentation/screens/products/product_detail_screen.dart';
 import '../../widgets/skeleton_loader.dart';
@@ -18,6 +19,7 @@ class FeaturedProductsScreen extends StatefulWidget {
 class _FeaturedProductsScreenState extends State<FeaturedProductsScreen> {
   final _productService = ProductService();
   final _cartService = CartService();
+  final _wishlistService = WishlistService();
   final _scrollController = ScrollController();
   
   List<ProductModel> _products = [];
@@ -151,6 +153,44 @@ class _FeaturedProductsScreenState extends State<FeaturedProductsScreen> {
           SnackBar(
             content: Text('Failed to add to cart: $e'),
             backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _toggleWishlist(ProductModel product) async {
+    try {
+      await _wishlistService.addToWishlist(product.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${product.name} added to wishlist'),
+            backgroundColor: AppColors.primary,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        String errorMessage;
+        final errorString = e.toString().toLowerCase();
+        
+        if (errorString.contains('already') && errorString.contains('wishlist')) {
+          errorMessage = '${product.name} is already in your wishlist';
+        } else if (errorString.contains('network') || errorString.contains('connection')) {
+          errorMessage = 'Network error. Please check your connection';
+        } else if (errorString.contains('unauthorized') || errorString.contains('401')) {
+          errorMessage = 'Please login to add items to wishlist';
+        } else {
+          errorMessage = 'Unable to add to wishlist. Please try again';
+        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.orange.shade700,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -363,11 +403,32 @@ class _FeaturedProductsScreenState extends State<FeaturedProductsScreen> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        '-${product.discountPercentage.toStringAsFixed(0)}%',
+                        '-${product.discountPercentage.toInt()}%',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: GestureDetector(
+                      onTap: () => _toggleWishlist(product),
+                      child: Container(
+                        width: 30,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.8),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.favorite_border,
+                          size: 18,
+                          color: Colors.grey.shade400,
                         ),
                       ),
                     ),

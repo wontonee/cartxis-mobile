@@ -19,6 +19,7 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
   final SearchService _searchService = SearchService();
   final CategoryService _categoryService = CategoryService();
   final CartService _cartService = CartService();
@@ -48,6 +49,14 @@ class _SearchScreenState extends State<SearchScreen> {
     if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
       _performSearch();
     }
+
+    // Ensure the screen never opens looking empty; focus search after first frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (widget.initialQuery == null) {
+        _searchFocusNode.requestFocus();
+      }
+    });
     
     // Listen to search field changes for autocomplete
     _searchController.addListener(_onSearchChanged);
@@ -58,6 +67,7 @@ class _SearchScreenState extends State<SearchScreen> {
     _debounceTimer?.cancel();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
+    _searchFocusNode.dispose();
     _minPriceController.dispose();
     _maxPriceController.dispose();
     super.dispose();
@@ -280,6 +290,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       ),
                       child: TextField(
                         controller: _searchController,
+                        focusNode: _searchFocusNode,
                         autofocus: widget.initialQuery == null,
                         decoration: InputDecoration(
                           hintText: 'Search products...',
@@ -331,37 +342,6 @@ class _SearchScreenState extends State<SearchScreen> {
                         ),
                         textInputAction: TextInputAction.search,
                       ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: () {
-                      setState(() {
-                        _showFilters = !_showFilters;
-                      });
-                    },
-                    icon: Stack(
-                      children: [
-                        Icon(
-                          Icons.filter_list,
-                          color: _showFilters 
-                              ? AppColors.primary 
-                              : (isDark ? Colors.white : Colors.grey.shade900),
-                        ),
-                        if (_selectedCategoryId != null || _minPrice != null || _maxPrice != null)
-                          Positioned(
-                            right: 0,
-                            top: 0,
-                            child: Container(
-                              width: 8,
-                              height: 8,
-                              decoration: const BoxDecoration(
-                                color: AppColors.primary,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                          ),
-                      ],
                     ),
                   ),
                 ],
@@ -546,34 +526,143 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildBody(bool isDark) {
     // If search is empty, show empty state
     if (_searchController.text.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.search,
-              size: 80,
-              color: Colors.grey.shade300,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Search for products',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+      final popular = <String>[
+        'electronics',
+        'shoes',
+        'watch',
+        'jacket',
+      ];
+
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                Icons.search,
+                size: 32,
+                color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Search products',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : Colors.grey.shade900,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Start typing to see results. Try a popular search below.',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          if (_selectedCategoryId != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 14),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.10),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.filter_alt_outlined, size: 18, color: AppColors.primary),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Category filter is selected. Type to search within it.',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _selectedCategoryId = null;
+                        });
+                      },
+                      child: const Text('Clear'),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Results appear as you type',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade500,
-              ),
+
+          const SizedBox(height: 18),
+          Text(
+            'Popular searches',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: isDark ? Colors.grey.shade200 : Colors.grey.shade800,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: popular
+                .map(
+                  (q) => ActionChip(
+                    label: Text(q),
+                    onPressed: () {
+                      _searchController.text = q;
+                      _searchController.selection = TextSelection.fromPosition(
+                        TextPosition(offset: _searchController.text.length),
+                      );
+                      _performSearch();
+                    },
+                    backgroundColor: isDark ? const Color(0xFF1A2633) : Colors.white,
+                    side: BorderSide(
+                      color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                    ),
+                    labelStyle: TextStyle(
+                      color: isDark ? Colors.grey.shade200 : Colors.grey.shade800,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+
+          const SizedBox(height: 22),
+          Text(
+            'Tip',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: isDark ? Colors.grey.shade200 : Colors.grey.shade800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Use keywords to find products quickly.',
+            style: TextStyle(
+              fontSize: 13,
+              color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+            ),
+          ),
+        ],
       );
     }
 
@@ -598,7 +687,7 @@ class _SearchScreenState extends State<SearchScreen> {
               child: GridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  childAspectRatio: 0.7,
+                  childAspectRatio: 0.68,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
                 ),
@@ -680,7 +769,7 @@ class _SearchScreenState extends State<SearchScreen> {
           padding: const EdgeInsets.all(16),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            childAspectRatio: 0.7,
+            childAspectRatio: 0.68,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
           ),
@@ -694,6 +783,21 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildProductCard(ProductModel product, bool isDark) {
+    String imageUrl = '';
+    if (product.images.isNotEmpty) {
+      final firstImage = product.images[0];
+      if (firstImage is String) {
+        imageUrl = firstImage;
+      } else if (firstImage is Map<String, dynamic>) {
+        imageUrl = firstImage['url']?.toString() ??
+            firstImage['path']?.toString() ??
+            firstImage['image']?.toString() ??
+            firstImage['imageUrl']?.toString() ??
+            firstImage['image_url']?.toString() ??
+            '';
+      }
+    }
+
     return GestureDetector(
       onTap: () {
         Navigator.pushNamed(
@@ -731,9 +835,9 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
                 child: Stack(
                   children: [
-                    product.images.isNotEmpty
+                    imageUrl.isNotEmpty
                         ? Image.network(
-                            product.images.first.imageUrl,
+                            imageUrl,
                             width: double.infinity,
                             height: 140,
                             fit: BoxFit.cover,
@@ -852,13 +956,14 @@ class _SearchScreenState extends State<SearchScreen> {
                           _addToCart(product);
                         },
                         child: Container(
-                          padding: const EdgeInsets.all(6),
+                          width: 26,
+                          height: 26,
                           decoration: const BoxDecoration(
                             color: AppColors.primary,
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
-                            Icons.add_shopping_cart,
+                            Icons.add,
                             size: 16,
                             color: Colors.white,
                           ),

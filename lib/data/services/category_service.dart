@@ -10,9 +10,15 @@ class CategoryService {
   CategoryService({ApiClient? apiClient}) : _apiClient = apiClient ?? ApiClient();
 
   /// Get all categories
-  Future<List<CategoryModel>> getCategories() async {
+  Future<List<CategoryModel>> getCategories({String? search}) async {
+    final trimmedSearch = search?.trim();
     final response = await _apiClient.get(
       ApiConfig.categories,
+      queryParameters: (trimmedSearch == null || trimmedSearch.isEmpty)
+          ? null
+          : {
+              'search': trimmedSearch,
+            },
     );
 
     // Check success first before parsing data

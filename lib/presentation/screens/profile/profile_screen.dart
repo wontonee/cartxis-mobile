@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:vortex_app/core/constants/app_colors.dart';
+import 'package:vortex_app/core/constants/app_strings.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vortex_app/data/services/auth_service.dart';
 import 'package:vortex_app/data/models/user_model.dart';
-import 'package:vortex_app/core/network/api_client.dart';
 import 'package:vortex_app/core/network/api_exception.dart';
-import 'package:vortex_app/core/config/api_config.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -167,12 +166,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    IconButton(
-                      onPressed: () => _showComingSoon('More options'),
-                      icon: const Icon(Icons.more_vert),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
+                    const SizedBox(width: 40),
                   ],
                 ),
               ),
@@ -384,7 +378,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                'Version 2.4.0',
+                                'Version ${AppStrings.appVersion}',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.grey.shade400,

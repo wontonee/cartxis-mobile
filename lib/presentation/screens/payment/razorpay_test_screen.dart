@@ -66,7 +66,7 @@ class _RazorpayTestScreenState extends State<RazorpayTestScreen> {
       _isProcessing = false;
     });
     
-    final errorMessage = _razorpayService.getErrorMessage(response.code);
+    final errorMessage = _razorpayService.getErrorMessage(response.code ?? -1);
     
     _showDialog(
       title: 'Payment Failed',
