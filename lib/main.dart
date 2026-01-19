@@ -35,7 +35,7 @@ void main() async {
   CurrencyUtils.preload();
 
   // Run the app
-  runApp(const VortexApp());
+  runApp(const CartxisApp());
 }
 
 /// HTTP Overrides for development to accept self-signed certificates

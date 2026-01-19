@@ -107,7 +107,7 @@ class HelpSupportScreen extends StatelessWidget {
                     _buildContactCard(
                       icon: Icons.email_outlined,
                       title: 'Email',
-                      content: 'support@vortex.com',
+                      content: 'support@cartxis.com',
                       isDark: isDark,
                     ),
 

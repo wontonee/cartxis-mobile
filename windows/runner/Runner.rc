@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "vortex" "\0"
+            VALUE "FileDescription", "Cartxis" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "vortex" "\0"
+            VALUE "InternalName", "Cartxis" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2025 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "vortex.exe" "\0"
-            VALUE "ProductName", "vortex" "\0"
+            VALUE "OriginalFilename", "cartxis.exe" "\0"
+            VALUE "ProductName", "Cartxis" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

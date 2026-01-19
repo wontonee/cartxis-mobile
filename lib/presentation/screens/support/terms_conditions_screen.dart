@@ -77,22 +77,22 @@ class TermsConditionsScreen extends StatelessWidget {
 
                     _buildSection(
                       title: '1. Acceptance of Terms',
-                      content:
-                          'By accessing and using Vortex, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.',
+                        content:
+                          'By accessing and using Cartxis, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.',
                       isDark: isDark,
                     ),
 
                     _buildSection(
                       title: '2. Use License',
-                      content:
-                          'Permission is granted to temporarily download one copy of the materials on Vortex\'s app for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title, and under this license you may not:\n\n• Modify or copy the materials\n• Use the materials for any commercial purpose\n• Attempt to decompile or reverse engineer any software\n• Remove any copyright or proprietary notations\n• Transfer the materials to another person',
+                        content:
+                          'Permission is granted to temporarily download one copy of the materials on Cartxis\'s app for personal, non-commercial transitory viewing only. This is the grant of a license, not a transfer of title, and under this license you may not:\n\n• Modify or copy the materials\n• Use the materials for any commercial purpose\n• Attempt to decompile or reverse engineer any software\n• Remove any copyright or proprietary notations\n• Transfer the materials to another person',
                       isDark: isDark,
                     ),
 
                     _buildSection(
                       title: '3. Account Terms',
-                      content:
-                          'You are responsible for maintaining the security of your account and password. Vortex cannot and will not be liable for any loss or damage from your failure to comply with this security obligation.\n\nYou must provide accurate and complete information when creating your account. You are fully responsible for all activities that occur under your account.',
+                        content:
+                          'You are responsible for maintaining the security of your account and password. Cartxis cannot and will not be liable for any loss or damage from your failure to comply with this security obligation.\n\nYou must provide accurate and complete information when creating your account. You are fully responsible for all activities that occur under your account.',
                       isDark: isDark,
                     ),
 
@@ -133,8 +133,8 @@ class TermsConditionsScreen extends StatelessWidget {
 
                     _buildSection(
                       title: '9. Limitation of Liability',
-                      content:
-                          'In no event shall Vortex or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use Vortex.',
+                        content:
+                          'In no event shall Cartxis or its suppliers be liable for any damages (including, without limitation, damages for loss of data or profit, or due to business interruption) arising out of the use or inability to use Cartxis.',
                       isDark: isDark,
                     ),
 
@@ -154,8 +154,8 @@ class TermsConditionsScreen extends StatelessWidget {
 
                     _buildSection(
                       title: '12. Contact Information',
-                      content:
-                          'If you have any questions about these Terms and Conditions, please contact us at:\n\nEmail: legal@vortex.com\nPhone: +1 (800) 123-4567',
+                        content:
+                          'If you have any questions about these Terms and Conditions, please contact us at:\n\nEmail: legal@cartxis.com\nPhone: +1 (800) 123-4567',
                       isDark: isDark,
                     ),
 
@@ -188,7 +188,7 @@ class TermsConditionsScreen extends StatelessWidget {
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
-                              'By using Vortex, you acknowledge that you have read and understood these Terms and Conditions.',
+                              'By using Cartxis, you acknowledge that you have read and understood these Terms and Conditions.',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: isDark

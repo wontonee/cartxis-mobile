@@ -86,7 +86,7 @@ class AboutUsScreen extends StatelessWidget {
                     // App Name
                     Center(
                       child: Text(
-                        'Vortex',
+                        'Cartxis',
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
@@ -113,8 +113,8 @@ class AboutUsScreen extends StatelessWidget {
                     // About Section
                     _buildSection(
                       title: 'Our Story',
-                      content:
-                          'Vortex is a leading e-commerce platform dedicated to providing customers with an exceptional shopping experience. Founded in 2020, we\'ve grown to serve millions of customers worldwide with our commitment to quality, affordability, and customer satisfaction.',
+                        content:
+                          'Cartxis is a leading e-commerce platform dedicated to providing customers with an exceptional shopping experience. Founded in 2020, we\'ve grown to serve millions of customers worldwide with our commitment to quality, affordability, and customer satisfaction.',
                       isDark: isDark,
                     ),
 
@@ -197,7 +197,7 @@ class AboutUsScreen extends StatelessWidget {
                     // Copyright
                     Center(
                       child: Text(
-                        '© 2025 Vortex. All rights reserved.',
+                        '© 2025 Cartxis. All rights reserved.',
                         style: TextStyle(
                           fontSize: 12,
                           color: isDark

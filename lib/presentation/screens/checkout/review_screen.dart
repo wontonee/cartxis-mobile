@@ -159,7 +159,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
       }
       
       final razorpayKey = gatewayConfig['key_id'] as String?;
-      final businessName = gatewayConfig['name'] as String? ?? 'Vortex';
+      final businessName = gatewayConfig['name'] as String? ?? 'Cartxis';
       final themeColor = gatewayConfig['theme_color'] as String? ?? '#3399cc';
       
       if (razorpayKey == null || razorpayKey.isEmpty) {
@@ -297,8 +297,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
       final paymentIntentId = gatewayConfig['payment_intent_id'] as String?;
       
       final merchantName = gatewayConfig['name'] as String? ?? 
-                          gatewayConfig['merchant_name'] as String? ?? 
-                          'Vortex';
+              gatewayConfig['merchant_name'] as String? ?? 
+              'Cartxis';
       
       final currency = gatewayConfig['currency'] as String? ?? 'USD';
       

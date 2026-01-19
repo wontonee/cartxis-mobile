@@ -204,7 +204,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Fill in your details to start shopping with Vortex.',
+                        'Fill in your details to start shopping with Cartxis.',
                         style: AppTextStyles.body1.copyWith(
                           color: isDark ? Colors.grey.shade400 : const Color(0xFF757575),
                         ),
@@ -280,7 +280,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
-                          hintText: 'example@vortex.com',
+                          hintText: 'example@cartxis.com',
                           hintStyle: TextStyle(color: Colors.grey.shade400),
                           prefixIcon: Icon(
                             Icons.mail_outline,

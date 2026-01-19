@@ -8,7 +8,7 @@ class ApiConfig {
   // Base URLs
   // Use 10.0.2.2 for Android emulator to access host machine's localhost
   // Use your actual local IP (e.g., 192.168.x.x) for physical devices
-  static const String testBaseUrl = 'https://vortex.test';
+  static const String testBaseUrl = 'https://cartxis.test';
 
   //'http://192.168.1.13:8000'; // Android emulator special IP
   static const String productionBaseUrl =
@@ -38,6 +38,10 @@ class ApiConfig {
 
   // Currency Endpoints
   static const String currencyDefault = '/api/$apiVersion/currency/default';
+
+  // System Sync Endpoints
+  static const String apiSyncHeartbeat = '/api/$apiVersion/system/api-sync/heartbeat';
+  static const String apiSyncStatus = '/api/$apiVersion/system/api-sync/status';
 
   // Product Endpoints
   static const String products = '/api/$apiVersion/products';

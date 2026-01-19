@@ -77,8 +77,8 @@ class PrivacyPolicyScreen extends StatelessWidget {
 
                     _buildSection(
                       title: 'Introduction',
-                      content:
-                          'At Vortex, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application. Please read this privacy policy carefully.',
+                        content:
+                          'At Cartxis, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our mobile application. Please read this privacy policy carefully.',
                       isDark: isDark,
                     ),
 
@@ -161,8 +161,8 @@ class PrivacyPolicyScreen extends StatelessWidget {
 
                     _buildSection(
                       title: '12. Contact Us',
-                      content:
-                          'If you have questions or comments about this Privacy Policy, please contact us at:\n\nEmail: privacy@vortex.com\nPhone: +1 (800) 123-4567\nAddress: 123 Commerce Street, San Francisco, CA 94102',
+                        content:
+                          'If you have questions or comments about this Privacy Policy, please contact us at:\n\nEmail: privacy@cartxis.com\nPhone: +1 (800) 123-4567\nAddress: 123 Commerce Street, San Francisco, CA 94102',
                       isDark: isDark,
                     ),
 
