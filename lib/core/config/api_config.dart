@@ -11,8 +11,7 @@ class ApiConfig {
   static const String testBaseUrl = 'https://cartxis.test';
 
   //'http://192.168.1.13:8000'; // Android emulator special IP
-  static const String productionBaseUrl =
-      'https://api.vortex.com'; // Update with actual production URL
+  static const String productionBaseUrl ='https://demo.cartxis.com'; // Update with actual production URL
 
   // Current Base URL based on environment
   static String get baseUrl => isProduction ? productionBaseUrl : testBaseUrl;
@@ -33,6 +32,8 @@ class ApiConfig {
 
   // Customer Endpoints
   static const String customerProfile = '/api/$apiVersion/customer/profile';
+  static const String customerOrders = '/api/$apiVersion/customer/orders';
+  static String customerOrderDetail(int orderId) => '/api/$apiVersion/customer/orders/$orderId';
   static const String wishlist = '/api/$apiVersion/customer/wishlist';
   static const String wishlistAdd = '/api/$apiVersion/customer/wishlist/add';
 
