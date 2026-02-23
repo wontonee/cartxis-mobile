@@ -996,8 +996,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         return _buildSaleCard(
                           displayImageUrl,
                           product.name,
-                          '${product.currency} ${product.finalPrice.toStringAsFixed(2)}',
-                          '${product.currency} ${product.price.toStringAsFixed(2)}',
+                          product.finalPrice,
+                          product.price,
                           discountText,
                           isDark,
                           product,
@@ -1083,7 +1083,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         return _buildNewArrivalCard(
                           displayImageUrl,
                           product.name,
-                          '${product.currency} ${product.finalPrice.toStringAsFixed(2)}',
+                          product.finalPrice,
                           isDark,
                         );
                       },
@@ -1286,8 +1286,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildSaleCard(
     String imageUrl,
     String name,
-    String salePrice,
-    String originalPrice,
+    double salePrice,
+    double originalPrice,
     String discount,
     bool isDark,
     ProductModel? product,
@@ -1399,25 +1399,17 @@ class _HomeScreenState extends State<HomeScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              salePrice,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.red,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            StyledPriceText(
+                              amount: salePrice,
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red,
                             ),
-                            Text(
-                              originalPrice,
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey.shade400,
-                                decoration: TextDecoration.lineThrough,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            StyledPriceText(
+                              amount: originalPrice,
+                              fontSize: 11,
+                              color: Colors.grey.shade400,
+                              decoration: TextDecoration.lineThrough,
                             ),
                           ],
                         ),
@@ -1466,7 +1458,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildNewArrivalCard(
     String imageUrl,
     String name,
-    String price,
+    double price,
     bool isDark,
   ) {
     return Container(
@@ -1547,13 +1539,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      price,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
-                      ),
+                    StyledPriceText(
+                      amount: price,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
                     ),
                     Container(
                       width: 26,
