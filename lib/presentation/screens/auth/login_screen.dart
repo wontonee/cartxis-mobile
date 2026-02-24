@@ -4,7 +4,7 @@ import 'package:vortex_app/core/constants/app_sizes.dart';
 import 'package:vortex_app/core/constants/app_strings.dart';
 import 'package:vortex_app/core/theme/text_styles.dart';
 import 'package:vortex_app/data/services/auth_service.dart';
-import 'package:vortex_app/core/network/api_client.dart';
+import 'package:vortex_app/data/services/app_settings_service.dart';
 import 'package:vortex_app/core/network/api_exception.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -19,9 +19,26 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _authService = AuthService();
+  final _settingsService = AppSettingsService();
+  String? _logoUrl;
   bool _rememberMe = false;
   bool _obscurePassword = true;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadLogoUrl();
+  }
+
+  Future<void> _loadLogoUrl() async {
+    final url = await _settingsService.getMobileAuthLogo();
+    if (mounted) {
+      setState(() {
+        _logoUrl = url;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -83,13 +100,14 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _onGoogleLogin() {
-    // TODO: Implement Google login
-  }
+  // TODO v2: Google & Apple login
+  // void _onGoogleLogin() {
+  //   // TODO: Implement Google login
+  // }
 
-  void _onAppleLogin() {
-    // TODO: Implement Apple login
-  }
+  // void _onAppleLogin() {
+  //   // TODO: Implement Apple login
+  // }
 
   void _onForgotPassword() {
     Navigator.of(context).pushNamed('/forgot-password');
@@ -157,14 +175,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 24),
 
                         // Divider
-                        _buildDivider(isDark),
-
-                        const SizedBox(height: 24),
-
-                        // Social Login Buttons
-                        _buildSocialLoginButtons(isDark),
-
-                        const SizedBox(height: 32),
+                        // TODO v2: Social login divider & buttons (Google/Apple)
+                        // _buildDivider(isDark),
+                        // const SizedBox(height: 24),
+                        // _buildSocialLoginButtons(isDark),
+                        // const SizedBox(height: 32),
 
                         // Register Link
                         _buildRegisterLink(isDark),
@@ -183,18 +198,26 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildHeader(bool isDark) {
     return Column(
       children: [
-        // Logo
-        Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+        // Logo — fetched from /api/v1/app/settings (mobile_auth_logo).
+        // Falls back to assets/transparent_logo.png if admin has not set one.
+        SizedBox(
+          width: 200,
+          height: 200,
+          child: ClipRRect(
             borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
-          ),
-          child: const Icon(
-            Icons.shopping_bag,
-            size: 40,
-            color: AppColors.primary,
+            child: _logoUrl != null
+                ? Image.network(
+                    _logoUrl!,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => Image.asset(
+                      'assets/transparent_logo.png',
+                      fit: BoxFit.contain,
+                    ),
+                  )
+                : Image.asset(
+                    'assets/transparent_logo.png',
+                    fit: BoxFit.contain,
+                  ),
           ),
         ),
 
@@ -447,110 +470,81 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildDivider(bool isDark) {
-    return Row(
-      children: [
-        Expanded(
-          child: Divider(
-            color: isDark ? AppColors.borderDark : AppColors.borderLight,
-            thickness: 1,
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            AppStrings.orContinueWith,
-            style: AppTextStyles.captionBold.copyWith(
-              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-              fontSize: 11,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ),
-        Expanded(
-          child: Divider(
-            color: isDark ? AppColors.borderDark : AppColors.borderLight,
-            thickness: 1,
-          ),
-        ),
-      ],
-    );
-  }
+  // TODO v2: Social login divider — re-enable when Google/Apple login is implemented
+  // Widget _buildDivider(bool isDark) {
+  //   return Row(
+  //     children: [
+  //       Expanded(
+  //         child: Divider(
+  //           color: isDark ? AppColors.borderDark : AppColors.borderLight,
+  //           thickness: 1,
+  //         ),
+  //       ),
+  //       Padding(
+  //         padding: const EdgeInsets.symmetric(horizontal: 16),
+  //         child: Text(
+  //           AppStrings.orContinueWith,
+  //           style: AppTextStyles.captionBold.copyWith(
+  //             color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+  //             fontSize: 11,
+  //             letterSpacing: 0.5,
+  //           ),
+  //         ),
+  //       ),
+  //       Expanded(
+  //         child: Divider(
+  //           color: isDark ? AppColors.borderDark : AppColors.borderLight,
+  //           thickness: 1,
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
 
-  Widget _buildSocialLoginButtons(bool isDark) {
-    return Row(
-      children: [
-        // Google Button
-        Expanded(
-          child: OutlinedButton(
-            onPressed: _onGoogleLogin,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: isDark ? AppColors.darkText : AppColors.textPrimary,
-              side: BorderSide(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight,
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.network(
-                  'https://lh3.googleusercontent.com/aida-public/AB6AXuDcCA8YVTKB8SugO_c_jpO4MV67HbPPLeU1_AvXuM5qJyGSasD8ORCXI20gqOiCv9nJ4RVEHeFySH6XNBSvIfLZScDFvWD3vdmNC6JbTcQSY5JiVlTI28sthDOxi-9XRvUP3minh7W6HRTQvho7FMZED7Tg3Za2Me_NMY5oT4SSIjGB7obo_gVVFul5muzKFF3Ip_l9mV8QZcb9Yxck7D3qkuety1NxamBIW5cfn9M7pIYwrWDokPxPUckiyuNfMA0VdbAx0QMDPSia',
-                  width: 20,
-                  height: 20,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(Icons.g_mobiledata, size: 20);
-                  },
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  AppStrings.google,
-                  style: AppTextStyles.buttonSmall.copyWith(
-                    color: isDark ? AppColors.darkText : AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        const SizedBox(width: 16),
-
-        // Apple Button
-        Expanded(
-          child: OutlinedButton(
-            onPressed: _onAppleLogin,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: isDark ? AppColors.darkText : AppColors.textPrimary,
-              side: BorderSide(
-                color: isDark ? AppColors.borderDark : AppColors.borderLight,
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.apple,
-                  size: 24,
-                  color: isDark ? AppColors.darkText : AppColors.textPrimary,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  AppStrings.apple,
-                  style: AppTextStyles.buttonSmall.copyWith(
-                    color: isDark ? AppColors.darkText : AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  // TODO v2: Social login buttons \u2014 re-enable when Google/Apple login is implemented
+  // Widget _buildSocialLoginButtons(bool isDark) {
+  //   return Row(
+  //     children: [
+  //       // Google Button
+  //       Expanded(
+  //         child: OutlinedButton(
+  //           onPressed: _onGoogleLogin,
+  //           style: OutlinedButton.styleFrom(
+  //             foregroundColor: isDark ? AppColors.darkText : AppColors.textPrimary,
+  //             side: BorderSide(
+  //               color: isDark ? AppColors.borderDark : AppColors.borderLight,
+  //             ),
+  //             padding: const EdgeInsets.symmetric(vertical: 12),
+  //             backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+  //           ),
+  //           child: Row(
+  //             mainAxisAlignment: MainAxisAlignment.center,
+  //             children: [
+  //               Image.network('https://lh3.googleusercontent.com/...', width: 20, height: 20),
+  //               const SizedBox(width: 8),
+  //               Text(AppStrings.google),
+  //             ],
+  //           ),
+  //         ),
+  //       ),
+  //       const SizedBox(width: 16),
+  //       // Apple Button
+  //       Expanded(
+  //         child: OutlinedButton(
+  //           onPressed: _onAppleLogin,
+  //           child: Row(
+  //             mainAxisAlignment: MainAxisAlignment.center,
+  //             children: [
+  //               Icon(Icons.apple, size: 24),
+  //               const SizedBox(width: 8),
+  //               Text(AppStrings.apple),
+  //             ],
+  //           ),
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
 
   Widget _buildRegisterLink(bool isDark) {
     return Row(

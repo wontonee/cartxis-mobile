@@ -33,11 +33,7 @@ class ApiClient {
       final uri = Uri.parse(ApiConfig.getFullUrl(endpoint))
           .replace(queryParameters: queryParameters);
 
-      if (!ApiConfig.isProduction) {
-        // Useful for verifying filter params like category_ids/sort_by/sort_order.
-        // Keep it lightweight: don't print headers or bodies.
-        print('🌐 GET $uri');
-      }
+
 
       final response = await _client
           .get(
@@ -250,6 +246,9 @@ class ApiClient {
     final defaultHeaders = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
+      // Android emulator hits 10.0.2.2; send Host header so nginx routes to the correct vhost
+      if (!ApiConfig.isProduction && Platform.isAndroid)
+        'Host': ApiConfig.devDomain,
     };
 
     // Add authentication token if available

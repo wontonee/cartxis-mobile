@@ -23,6 +23,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
   int _cartCount = 0;
   final CartService _cartService = CartService();
   int _cartRefreshKey = 0; // Used to force cart screen rebuild
+  int _wishlistRefreshKey = 0; // Used to force wishlist screen rebuild
 
   @override
   void initState() {
@@ -62,6 +63,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
     if (index == 2) {
       _refreshCart();
       _loadCartCount();
+    }
+
+    // Reload wishlist when wishlist tab is selected
+    if (index == 3) {
+      setState(() {
+        _wishlistRefreshKey++;
+      });
     }
   }
 
@@ -141,7 +149,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
               });
             },
           ),
-          const WishlistScreen(),
+          WishlistScreen(key: ValueKey('wishlist_$_wishlistRefreshKey')),
           const ProfileScreen(),
         ],
       ),
@@ -260,10 +268,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> with Widget
     
     return GestureDetector(
       onTap: () {
-        setState(() {
-          _selectedIndex = index;
-        });
-        _loadCartCount();
+        _onTabTapped(index);
       },
       child: Column(
         mainAxisSize: MainAxisSize.min,

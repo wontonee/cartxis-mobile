@@ -1,3 +1,5 @@
+import 'dart:io';
+
 /// API Configuration
 class ApiConfig {
   ApiConfig._();
@@ -6,12 +8,17 @@ class ApiConfig {
   static const bool isProduction = false; // Change to true for production
 
   // Base URLs
-  // Use 10.0.2.2 for Android emulator to access host machine's localhost
-  // Use your actual local IP (e.g., 192.168.x.x) for physical devices
-  static const String testBaseUrl = 'https://cartxis.test';
+  // iOS simulator: resolved via /etc/hosts on Mac → cartxis.test
+  // Android emulator: 10.0.2.2 = host machine loopback; nginx vhost selected via Host header
+  static const String _iosBaseUrl     = 'https://cartxis.test';
+  static const String _androidBaseUrl = 'https://10.0.2.2'; // No path prefix — Host header routes to vhost root
+  static const String productionBaseUrl = 'https://demo.cartxis.com';
 
-  //'http://192.168.1.13:8000'; // Android emulator special IP
-  static const String productionBaseUrl ='https://demo.cartxis.com'; // Update with actual production URL
+  // Sent as Host header on Android dev so nginx routes to the cartxis.test vhost
+  static const String devDomain = 'cartxis.test';
+
+  static String get testBaseUrl =>
+      Platform.isAndroid ? _androidBaseUrl : _iosBaseUrl;
 
   // Current Base URL based on environment
   static String get baseUrl => isProduction ? productionBaseUrl : testBaseUrl;
@@ -29,6 +36,7 @@ class ApiConfig {
   static const String authResetPassword =
       '/api/$apiVersion/auth/reset-password';
   static const String authVerifyEmail = '/api/$apiVersion/auth/verify-email';
+  static const String authDeleteAccount = '/api/$apiVersion/auth/account';
 
   // Customer Endpoints
   static const String customerProfile = '/api/$apiVersion/customer/profile';
@@ -56,6 +64,9 @@ class ApiConfig {
 
   // Banner Endpoints
   static const String banners = '/api/$apiVersion/banners';
+
+  // App Settings Endpoints
+  static const String appSettings = '/api/$apiVersion/app/settings';
 
   // Timeout Settings
   static const Duration connectionTimeout = Duration(seconds: 30);

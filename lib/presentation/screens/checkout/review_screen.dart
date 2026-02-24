@@ -4,6 +4,7 @@ import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:vortex_app/core/constants/app_colors.dart';
 import 'package:vortex_app/data/services/checkout_service.dart';
 import 'package:vortex_app/data/services/cart_service.dart';
+import 'package:vortex_app/payments/gateways/paypal_service.dart';
 import 'package:vortex_app/payments/gateways/phonepe_service.dart';
 import 'package:vortex_app/payments/gateways/razorpay_service.dart';
 import 'package:vortex_app/payments/gateways/stripe_service.dart';
@@ -30,6 +31,7 @@ class ReviewScreen extends StatefulWidget {
 class _ReviewScreenState extends State<ReviewScreen> {
   final CheckoutService _checkoutService = CheckoutService();
   final CartService _cartService = CartService();
+  final PayPalService _paypalService = PayPalService();
   final PhonePeService _phonePeService = PhonePeService();
   final RazorpayService _razorpayService = RazorpayService();
   final StripeService _stripeService = StripeService();
@@ -120,6 +122,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
         );
       } else if (paymentMethodCode.toLowerCase() == 'stripe') {
         await _processStripePayment(
+          shippingAddressId: shippingAddressId,
+          notes: notes.isNotEmpty ? notes : null,
+        );
+      } else if (paymentMethodCode.toLowerCase() == 'paypal') {
+        await _processPayPalPayment(
           shippingAddressId: shippingAddressId,
           notes: notes.isNotEmpty ? notes : null,
         );
@@ -328,6 +335,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
       // Setup Stripe callbacks
       _stripeService.onSuccess = (String paymentIntentId) async {
         try {
+          // placeOrder first (same pattern as Razorpay/PhonePe)
           final result = await _checkoutService.placeOrder(
             shippingAddressId: shippingAddressId,
             paymentMethod: 'stripe',
@@ -336,19 +344,17 @@ class _ReviewScreenState extends State<ReviewScreen> {
           );
 
           final internalOrderId =
-              (result['id'] as num?)?.toInt() ??
-              (result['order_id'] as num?)?.toInt();
+              (result['order_id'] as num?)?.toInt() ??
+              (result['id'] as num?)?.toInt();
+          final orderNumber = result['order_number'] ??
+              '#VX-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
 
-          // Verify payment server-side.
           if (internalOrderId != null) {
             await _checkoutService.verifyPayment(
               orderId: internalOrderId,
               paymentIntentId: paymentIntentId,
             );
           }
-
-          final orderNumber = result['order_number'] ??
-              '#VX-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
 
           await _cartService.clearCart();
 
@@ -598,6 +604,104 @@ class _ReviewScreenState extends State<ReviewScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPlacingOrder = false;
+        });
+      }
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────── PayPal ──
+
+  Future<void> _processPayPalPayment({
+    required int shippingAddressId,
+    String? notes,
+  }) async {
+    try {
+      // 1. Place order first — backend creates PayPal Order (v2) and returns
+      //    paypal_order_id + approve_url.
+      final orderResult = await _checkoutService.placeOrder(
+        shippingAddressId: shippingAddressId,
+        paymentMethod: 'paypal',
+        notes: notes,
+      );
+
+      final internalOrderId =
+          (orderResult['order_id'] as num?)?.toInt() ??
+          (orderResult['id'] as num?)?.toInt();
+
+      final paypalOrderId = orderResult['paypal_order_id'] as String?;
+      final approveUrl    = orderResult['approve_url']    as String?;
+
+      if (paypalOrderId == null || approveUrl == null) {
+        throw Exception(
+            'PayPal order details missing from server response. '
+            'Please ensure PayPal is configured in the admin panel.');
+      }
+
+      // 2. Open PayPal WebView — user logs in and approves payment.
+      if (!mounted) return;
+      final paypalResult = await _paypalService.launchCheckout(
+        context: context,
+        approveUrl: approveUrl,
+      );
+
+      if (paypalResult.isCancelled) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('PayPal payment was cancelled.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      if (!paypalResult.isSuccess) {
+        throw Exception(paypalResult.errorMessage ?? 'PayPal payment failed.');
+      }
+
+      // 3. Verify payment — backend CAPTURES the PayPal order and marks it paid.
+      if (internalOrderId != null) {
+        await _checkoutService.verifyPayment(
+          orderId: internalOrderId,
+          // Prefer the token echoed back by PayPal; fall back to the ID we got
+          // from placeOrder (they are the same value).
+          paypalOrderId: paypalResult.paypalOrderId?.isNotEmpty == true
+              ? paypalResult.paypalOrderId
+              : paypalOrderId,
+        );
+      }
+
+      // 4. Clear cart and navigate to success screen.
+      await _cartService.clearCart();
+
+      final orderNumber = orderResult['order_number'] ??
+          '#VX-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+
+      if (mounted) {
+        Navigator.pushNamed(
+          context,
+          '/order-success',
+          arguments: {
+            'orderNumber': orderNumber,
+            'totalAmount': _total,
+            'estimatedDelivery': 'Mon, Aug 24',
+          },
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PayPal payment failed: $e'),
             backgroundColor: Colors.red,
           ),
         );

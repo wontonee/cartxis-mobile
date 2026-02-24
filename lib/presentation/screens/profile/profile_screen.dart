@@ -32,13 +32,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _isLoading = true;
       });
 
-      print('DEBUG: Loading user profile...');
       final user = await _authService.getProfile();
-      print('DEBUG: Profile loaded successfully!');
-      print('DEBUG: Name: ${user.name}');
-      print('DEBUG: Email: ${user.email}');  
-      print('DEBUG: Avatar: ${user.avatar}');
-      print('DEBUG: AvatarUrl: ${user.avatarUrl}');
       
       if (mounted) {
         setState(() {
@@ -47,8 +41,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       }
     } catch (e, stackTrace) {
-      print('DEBUG: Profile loading error: $e');
-      print('DEBUG: Stack trace: $stackTrace');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -90,6 +82,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  Future<void> _deleteAccount() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Account'),
+        content: const Text(
+          'This will permanently delete your account and all associated data. This action cannot be undone.\n\nAre you sure you want to continue?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('CANCEL'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+            ),
+            child: const Text('DELETE ACCOUNT'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      try {
+        await _authService.deleteAccount();
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/login');
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(e is ApiException ? e.message : 'Failed to delete account'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 
   Future<void> _logout() async {
@@ -340,11 +375,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           isDark: isDark,
                         ),
 
-                        // Logout Button
+                        // Delete Account + Logout Buttons
                         Padding(
                           padding: const EdgeInsets.all(24),
                           child: Column(
                             children: [
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton(
+                                  onPressed: _deleteAccount,
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.red,
+                                    side: const BorderSide(color: Colors.red),
+                                    backgroundColor: Colors.red.withOpacity(0.05),
+                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.delete_forever_outlined, size: 20),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Delete Account',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
                               SizedBox(
                                 width: double.infinity,
                                 child: OutlinedButton(

@@ -147,11 +147,6 @@ class _ShippingScreenState extends State<ShippingScreen> {
                                     return _buildShippingOption(option, isDark);
                                   },
                                 ),
-
-                      const SizedBox(height: 32),
-
-                      // Map Visualization
-                      _buildMapVisualization(isDark),
                     ],
                   ),
                 ),
@@ -458,92 +453,5 @@ class _ShippingScreenState extends State<ShippingScreen> {
     );
   }
 
-  Widget _buildMapVisualization(bool isDark) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1F2937) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark ? const Color(0xFF374151) : const Color(0xFFE2E8F0),
-        ),
-      ),
-      child: Container(
-        height: 128,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          children: [
-            // Map Image
-            Image.network(
-              'https://lh3.googleusercontent.com/aida-public/AB6AXuCuqojw-90AHnpEElhZOBJhWlYEUM5KsuG54Ai4LMt87ReVKNfc4ZB8apxu1N6jbw8bQmRR9TUtoRI9p-5AmZfFjhr9IxBZCk_W6sWzJzstrM85_JSPnHI5qRnEr_sMTC3vGdMqVdlb1_Sf6IMtZe4uxAkRKn0_YzU20MZtNBu2ziqosakQJuNTzOx_24tmK0E0ikfz-mozcTqENCiwNSs3W7w3ERpKmQly8jovkyUiX4uprk28OdGUCCKOIfedE67JjOkXE6k8N3OK',
-              width: double.infinity,
-              height: double.infinity,
-              fit: BoxFit.cover,
-              opacity: const AlwaysStoppedAnimation(0.8),
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  color: isDark ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
-                );
-              },
-            ),
-
-            // Gradient Overlay
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black.withOpacity(0.5),
-                  ],
-                ),
-              ),
-            ),
-
-            // Delivery Info
-            Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.local_shipping,
-                      size: 20,
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Delivery to New York, NY',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black45,
-                            offset: Offset(0, 1),
-                            blurRadius: 2,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
+

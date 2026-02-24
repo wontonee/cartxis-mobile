@@ -58,9 +58,6 @@ class ProductService {
     if (categoryId != null) {
       // API supports category_ids (comma-separated). Use single id for Home filter.
       queryParams['category_ids'] = categoryId.toString();
-      print('🔍 ProductService: Fetching featured products with category_ids=$categoryId');
-    } else {
-      print('🔍 ProductService: Fetching all featured products (no category filter)');
     }
 
     final response = await _apiClient.get(
@@ -77,7 +74,6 @@ class ProductService {
     }
 
     final parsed = ProductsResponse.fromJson(response);
-    print('📦 API Response for featured products: ${parsed.data.length} products');
     return parsed.data;
   }
 
@@ -98,9 +94,6 @@ class ProductService {
 
     if (categoryId != null) {
       queryParams['category_ids'] = categoryId.toString();
-      print('🔍 ProductService: Fetching new arrivals with category_ids=$categoryId');
-    } else {
-      print('🔍 ProductService: Fetching new arrivals (no category filter)');
     }
 
     final response = await _apiClient.get(
@@ -167,9 +160,6 @@ class ProductService {
 
     if (categoryId != null) {
       queryParams['category_ids'] = categoryId.toString();
-      print('🔍 ProductService: Fetching on-sale products with category_ids=$categoryId');
-    } else {
-      print('🔍 ProductService: Fetching on-sale products (no category filter)');
     }
 
     final response = await _apiClient.get(

@@ -22,6 +22,7 @@ dependencies:
   image_picker: ^1.0.7
   phonepe_payment_sdk: ^3.0.2
   crypto: ^3.0.7
+  webview_flutter: ^4.10.0
 
 dev_dependencies:
   flutter_test:
@@ -36,6 +37,9 @@ flutter:
   uses-material-design: true
 
   # Assets
+  assets:
+    - assets/logo.png
+    - assets/transparent_logo.png
   # assets:
   #   - assets/images/
   #   - assets/icons/

@@ -175,6 +175,7 @@ class CheckoutService {
   ///   • Razorpay  → [razorpayPaymentId], [razorpayOrderId], [razorpaySignature]
   ///   • Stripe    → [paymentIntentId]
   ///   • PhonePe   → [transactionId] (optional — server verifies via API)
+  ///   • PayPal    → [paypalOrderId] (backend captures + verifies via Orders v2)
   Future<Map<String, dynamic>> verifyPayment({
     required int orderId,
     String? transactionId,
@@ -182,6 +183,7 @@ class CheckoutService {
     String? razorpayOrderId,
     String? razorpaySignature,
     String? paymentIntentId,
+    String? paypalOrderId,
   }) async {
     try {
       final response = await _apiClient.post(
@@ -193,6 +195,7 @@ class CheckoutService {
           if (razorpayOrderId != null) 'razorpay_order_id': razorpayOrderId,
           if (razorpaySignature != null) 'razorpay_signature': razorpaySignature,
           if (paymentIntentId != null) 'payment_intent_id': paymentIntentId,
+          if (paypalOrderId != null) 'paypal_order_id': paypalOrderId,
         },
       );
 
