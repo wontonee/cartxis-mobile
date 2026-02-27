@@ -5,7 +5,7 @@ class ApiConfig {
   ApiConfig._();
 
   // Environment Configuration
-  static const bool isProduction = false; // Change to true for production
+  static const bool isProduction = true; // Change to true for production
 
   // Base URLs
   // iOS simulator: resolved via /etc/hosts on Mac → cartxis.test

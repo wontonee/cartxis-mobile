@@ -85,34 +85,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _deleteAccount() async {
-    final confirm = await showDialog<bool>(
+    final password = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Account'),
-        content: const Text(
-          'This will permanently delete your account and all associated data. This action cannot be undone.\n\nAre you sure you want to continue?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('CANCEL'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
-            child: const Text('DELETE ACCOUNT'),
-          ),
-        ],
-      ),
+      barrierDismissible: false,
+      builder: (_) => const _DeleteAccountDialog(),
     );
 
-    if (confirm == true && mounted) {
+    if (password != null && password.isNotEmpty && mounted) {
       try {
-        await _authService.deleteAccount();
+        await _authService.deleteAccount(password: password);
         if (mounted) {
-          Navigator.pushReplacementNamed(context, '/login');
+          // Dismiss keyboard first, then navigate on the next safe frame
+          FocusManager.instance.primaryFocus?.unfocus();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) Navigator.pushReplacementNamed(context, '/login');
+          });
         }
       } catch (e) {
         if (mounted) {
@@ -523,6 +510,73 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Standalone dialog that owns its TextEditingController lifecycle.
+/// Using a StatefulWidget ensures the controller is disposed by Flutter
+/// only after the dialog widget is fully removed from the tree.
+class _DeleteAccountDialog extends StatefulWidget {
+  const _DeleteAccountDialog();
+
+  @override
+  State<_DeleteAccountDialog> createState() => _DeleteAccountDialogState();
+}
+
+class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
+  final _passwordController = TextEditingController();
+  bool _obscure = true;
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Delete Account'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'This will permanently delete your account and all associated data. This action cannot be undone.',
+          ),
+          const SizedBox(height: 16),
+          const Text('Enter your password to confirm:'),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _passwordController,
+            obscureText: _obscure,
+            decoration: InputDecoration(
+              hintText: 'Password',
+              border: const OutlineInputBorder(),
+              suffixIcon: IconButton(
+                icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
+                onPressed: () => setState(() => _obscure = !_obscure),
+              ),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('CANCEL'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            if (_passwordController.text.isNotEmpty) {
+              Navigator.pop(context, _passwordController.text);
+            }
+          },
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          child: const Text('DELETE ACCOUNT'),
+        ),
+      ],
     );
   }
 }

@@ -266,7 +266,7 @@ class AuthService {
   }
 
   /// Delete the authenticated user account
-  Future<void> deleteAccount() async {
+  Future<void> deleteAccount({required String password}) async {
     final headers = await getAuthHeaders();
     if (headers == null) {
       throw ApiException(
@@ -278,6 +278,7 @@ class AuthService {
     await _apiClient.delete(
       ApiConfig.authDeleteAccount,
       headers: headers,
+      body: {'password': password},
     );
 
     // Clear all local auth data
