@@ -12,8 +12,6 @@ class WishlistService {
       ApiConfig.wishlist,
     );
 
-    print('Wishlist API Response: $response');
-
     if (response['success'] == false) {
       throw ApiException(
         message: response['message'] ?? 'Failed to retrieve wishlist',

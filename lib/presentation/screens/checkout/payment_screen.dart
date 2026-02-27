@@ -205,10 +205,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               });
                               
                               try {
-                                // Set payment method
-                                await _checkoutService.setPaymentMethod(_selectedPayment!);
-                                
-                                // Fetch checkout summary
+                                // Fetch checkout summary (payment method is set in review_screen
+                                // for each gateway — Razorpay, Stripe, and COD/PhonePe/others)
                                 final summary = await _checkoutService.getCheckoutSummary();
                                 
                                 // Get selected payment method details

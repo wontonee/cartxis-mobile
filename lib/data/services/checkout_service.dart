@@ -166,6 +166,50 @@ class CheckoutService {
     }
   }
 
+  /// Unified payment verification — works for all gateways.
+  ///
+  /// Call this after any payment SDK returns success, once the local order has
+  /// been created via [placeOrder].
+  ///
+  /// Supply only the fields relevant to your gateway:
+  ///   • Razorpay  → [razorpayPaymentId], [razorpayOrderId], [razorpaySignature]
+  ///   • Stripe    → [paymentIntentId]
+  ///   • PhonePe   → [transactionId] (optional — server verifies via API)
+  ///   • PayPal    → [paypalOrderId] (backend captures + verifies via Orders v2)
+  Future<Map<String, dynamic>> verifyPayment({
+    required int orderId,
+    String? transactionId,
+    String? razorpayPaymentId,
+    String? razorpayOrderId,
+    String? razorpaySignature,
+    String? paymentIntentId,
+    String? paypalOrderId,
+  }) async {
+    try {
+      final response = await _apiClient.post(
+        '/api/v1/checkout/verify-payment',
+        body: {
+          'order_id': orderId,
+          if (transactionId != null) 'transaction_id': transactionId,
+          if (razorpayPaymentId != null) 'razorpay_payment_id': razorpayPaymentId,
+          if (razorpayOrderId != null) 'razorpay_order_id': razorpayOrderId,
+          if (razorpaySignature != null) 'razorpay_signature': razorpaySignature,
+          if (paymentIntentId != null) 'payment_intent_id': paymentIntentId,
+          if (paypalOrderId != null) 'paypal_order_id': paypalOrderId,
+        },
+      );
+
+      if (response['success'] == true) {
+        return response['data'] ?? {};
+      } else {
+        final errorMsg = response['message'] ?? 'Payment verification failed';
+        throw Exception(errorMsg);
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   /// Place order
   Future<Map<String, dynamic>> placeOrder({
     required int shippingAddressId,

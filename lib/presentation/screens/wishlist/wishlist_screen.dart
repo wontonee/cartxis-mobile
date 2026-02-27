@@ -27,10 +27,13 @@ class _WishlistScreenState extends State<WishlistScreen> {
     _loadWishlist();
   }
 
+  String? _errorMessage;
+
   Future<void> _loadWishlist() async {
     try {
       setState(() {
         _isLoading = true;
+        _errorMessage = null;
       });
 
       final wishlist = await _wishlistService.getWishlist();
@@ -45,13 +48,8 @@ class _WishlistScreenState extends State<WishlistScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
+          _errorMessage = e.toString();
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load wishlist: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
       }
     }
   }
@@ -251,6 +249,29 @@ class _WishlistScreenState extends State<WishlistScreen> {
                     itemCount: 6,
                     itemBuilder: (context, index) =>
                         const ProductCardSkeleton(),
+                  )
+                else if (_errorMessage != null)
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.error_outline, size: 48, color: Colors.red.shade400),
+                          const SizedBox(height: 12),
+                          Text(
+                            _errorMessage!,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.red.shade400, fontSize: 13),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _loadWishlist,
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    ),
                   )
                 else if (_wishlistItems.isEmpty)
                   _buildEmptyState(isDark)

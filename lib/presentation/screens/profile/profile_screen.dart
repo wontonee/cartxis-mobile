@@ -32,13 +32,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _isLoading = true;
       });
 
-      print('DEBUG: Loading user profile...');
       final user = await _authService.getProfile();
-      print('DEBUG: Profile loaded successfully!');
-      print('DEBUG: Name: ${user.name}');
-      print('DEBUG: Email: ${user.email}');  
-      print('DEBUG: Avatar: ${user.avatar}');
-      print('DEBUG: AvatarUrl: ${user.avatarUrl}');
       
       if (mounted) {
         setState(() {
@@ -47,8 +41,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       }
     } catch (e, stackTrace) {
-      print('DEBUG: Profile loading error: $e');
-      print('DEBUG: Stack trace: $stackTrace');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -90,6 +82,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  Future<void> _deleteAccount() async {
+    final password = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const _DeleteAccountDialog(),
+    );
+
+    if (password != null && password.isNotEmpty && mounted) {
+      try {
+        await _authService.deleteAccount(password: password);
+        if (mounted) {
+          // Dismiss keyboard first, then navigate on the next safe frame
+          FocusManager.instance.primaryFocus?.unfocus();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) Navigator.pushReplacementNamed(context, '/login');
+          });
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(e is ApiException ? e.message : 'Failed to delete account'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
   }
 
   Future<void> _logout() async {
@@ -340,11 +362,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           isDark: isDark,
                         ),
 
-                        // Logout Button
+                        // Delete Account + Logout Buttons
                         Padding(
                           padding: const EdgeInsets.all(24),
                           child: Column(
                             children: [
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton(
+                                  onPressed: _deleteAccount,
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: Colors.red,
+                                    side: const BorderSide(color: Colors.red),
+                                    backgroundColor: Colors.red.withOpacity(0.05),
+                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.delete_forever_outlined, size: 20),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Delete Account',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
                               SizedBox(
                                 width: double.infinity,
                                 child: OutlinedButton(
@@ -458,6 +510,73 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Standalone dialog that owns its TextEditingController lifecycle.
+/// Using a StatefulWidget ensures the controller is disposed by Flutter
+/// only after the dialog widget is fully removed from the tree.
+class _DeleteAccountDialog extends StatefulWidget {
+  const _DeleteAccountDialog();
+
+  @override
+  State<_DeleteAccountDialog> createState() => _DeleteAccountDialogState();
+}
+
+class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
+  final _passwordController = TextEditingController();
+  bool _obscure = true;
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Delete Account'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'This will permanently delete your account and all associated data. This action cannot be undone.',
+          ),
+          const SizedBox(height: 16),
+          const Text('Enter your password to confirm:'),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _passwordController,
+            obscureText: _obscure,
+            decoration: InputDecoration(
+              hintText: 'Password',
+              border: const OutlineInputBorder(),
+              suffixIcon: IconButton(
+                icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
+                onPressed: () => setState(() => _obscure = !_obscure),
+              ),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('CANCEL'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            if (_passwordController.text.isNotEmpty) {
+              Navigator.pop(context, _passwordController.text);
+            }
+          },
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          child: const Text('DELETE ACCOUNT'),
+        ),
+      ],
     );
   }
 }

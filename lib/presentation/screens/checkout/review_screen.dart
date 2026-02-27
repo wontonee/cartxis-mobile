@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:vortex_app/core/constants/app_colors.dart';
 import 'package:vortex_app/data/services/checkout_service.dart';
 import 'package:vortex_app/data/services/cart_service.dart';
-import 'package:vortex_app/data/services/razorpay_service.dart';
-import 'package:vortex_app/data/services/stripe_service.dart';
+import 'package:vortex_app/payments/gateways/paypal_service.dart';
+import 'package:vortex_app/payments/gateways/phonepe_service.dart';
+import 'package:vortex_app/payments/gateways/razorpay_service.dart';
+import 'package:vortex_app/payments/gateways/stripe_service.dart';
 import 'package:vortex_app/presentation/widgets/price_text.dart';
 
 class ReviewScreen extends StatefulWidget {
@@ -28,6 +31,8 @@ class ReviewScreen extends StatefulWidget {
 class _ReviewScreenState extends State<ReviewScreen> {
   final CheckoutService _checkoutService = CheckoutService();
   final CartService _cartService = CartService();
+  final PayPalService _paypalService = PayPalService();
+  final PhonePeService _phonePeService = PhonePeService();
   final RazorpayService _razorpayService = RazorpayService();
   final StripeService _stripeService = StripeService();
   final TextEditingController _notesController = TextEditingController();
@@ -116,13 +121,22 @@ class _ReviewScreenState extends State<ReviewScreen> {
           notes: notes.isNotEmpty ? notes : null,
         );
       } else if (paymentMethodCode.toLowerCase() == 'stripe') {
-        // Handle Stripe payment
         await _processStripePayment(
           shippingAddressId: shippingAddressId,
           notes: notes.isNotEmpty ? notes : null,
         );
+      } else if (paymentMethodCode.toLowerCase() == 'paypal') {
+        await _processPayPalPayment(
+          shippingAddressId: shippingAddressId,
+          notes: notes.isNotEmpty ? notes : null,
+        );
+      } else if (paymentMethodCode.toLowerCase() == 'phonepe') {
+        await _processPhonePePayment(
+          shippingAddressId: shippingAddressId,
+          notes: notes.isNotEmpty ? notes : null,
+        );
       } else {
-        // For other payment methods (COD, etc), place order directly
+        // COD, Bank Transfer, etc.
         await _placeOrderDirect(
           shippingAddressId: shippingAddressId,
           paymentMethod: paymentMethodCode,
@@ -149,43 +163,50 @@ class _ReviewScreenState extends State<ReviewScreen> {
     String? notes,
   }) async {
     try {
-      // First, set the payment method to get gateway configuration
+      // Step 1: get gateway config for UI branding (name, theme)
       final paymentMethodData = await _checkoutService.setPaymentMethod('razorpay');
-      
       final gatewayConfig = paymentMethodData['gateway_config'] as Map<String, dynamic>?;
-      
-      if (gatewayConfig == null) {
-        throw Exception('Gateway configuration not available for Razorpay');
+      final businessName = gatewayConfig?['name'] as String? ?? 'Cartxis';
+      final themeColor = gatewayConfig?['theme_color'] as String? ?? '#3399cc';
+
+      // Step 2: place order first — backend creates internal order + Razorpay order
+      final orderResult = await _checkoutService.placeOrder(
+        shippingAddressId: shippingAddressId,
+        paymentMethod: 'razorpay',
+        notes: notes,
+      );
+
+      final internalOrderId =
+          (orderResult['order_id'] as num?)?.toInt() ??
+          (orderResult['id'] as num?)?.toInt();
+      final orderNumber = orderResult['order_number'] as String? ??
+          '#VX-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+      final razorpayOrderId = orderResult['razorpay_order_id'] as String?;
+      final razorpayKey = (orderResult['razorpay_key_id'] as String?) ??
+          (gatewayConfig?['key_id'] as String?);
+
+      if (internalOrderId == null) {
+        throw Exception('Order creation failed — no order ID returned');
       }
-      
-      final razorpayKey = gatewayConfig['key_id'] as String?;
-      final businessName = gatewayConfig['name'] as String? ?? 'Cartxis';
-      final themeColor = gatewayConfig['theme_color'] as String? ?? '#3399cc';
-      
+      if (razorpayOrderId == null || razorpayOrderId.isEmpty) {
+        throw Exception('Razorpay order not created. Check Razorpay gateway configuration.');
+      }
       if (razorpayKey == null || razorpayKey.isEmpty) {
-        throw Exception('Razorpay key not found in gateway configuration');
+        throw Exception('Razorpay key not found');
       }
-      
-      // Setup Razorpay callbacks
+
+      // Step 3: set up callbacks — order already placed, just verify on success
       _razorpayService.onSuccess = (PaymentSuccessResponse response) async {
-        
-        // Place order with payment ID
         try {
-          final result = await _checkoutService.placeOrder(
-            shippingAddressId: shippingAddressId,
-            paymentMethod: 'razorpay',
-            notes: notes,
-            paymentId: response.paymentId,
-            orderId: response.orderId,
-            signature: response.signature,
+          await _checkoutService.verifyPayment(
+            orderId: internalOrderId,
+            razorpayPaymentId: response.paymentId,
+            razorpayOrderId: response.orderId,
+            razorpaySignature: response.signature,
           );
-          
-          final orderNumber = result['order_number'] ?? '#VX-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
-          
-          // Clear cart after successful order
+
           await _cartService.clearCart();
-          
-          // Navigate to success screen
+
           if (mounted) {
             Navigator.pushNamed(
               context,
@@ -201,7 +222,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Order placement failed: $e'),
+                content: Text('Payment verification failed: $e'),
                 backgroundColor: Colors.red,
               ),
             );
@@ -216,7 +237,6 @@ class _ReviewScreenState extends State<ReviewScreen> {
       };
 
       _razorpayService.onError = (PaymentFailureResponse response) {
-        
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -240,15 +260,15 @@ class _ReviewScreenState extends State<ReviewScreen> {
         }
       };
 
-      // Open Razorpay checkout
-      final amountInPaise = (_total * 100).toInt(); // Convert to paise
+      // Step 4: open Razorpay checkout with the server-created order ID
+      final amountInPaise = (_total * 100).toInt();
       final customerPhone = widget.selectedAddress['phone']?.toString() ?? '';
       final customerEmail = widget.selectedAddress['email']?.toString() ?? '';
-      
-      
+
       _razorpayService.openCheckout(
         amount: amountInPaise,
         key: razorpayKey,
+        orderId: razorpayOrderId,
         name: businessName,
         description: 'Order Payment',
         prefillContact: customerPhone,
@@ -294,13 +314,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
       final clientSecret = gatewayConfig['client_secret'] as String? ?? 
                           gatewayConfig['payment_intent_client_secret'] as String?;
       
-      final paymentIntentId = gatewayConfig['payment_intent_id'] as String?;
-      
       final merchantName = gatewayConfig['name'] as String? ?? 
               gatewayConfig['merchant_name'] as String? ?? 
               'Cartxis';
-      
-      final currency = gatewayConfig['currency'] as String? ?? 'USD';
       
       if (publishableKey == null || publishableKey.isEmpty) {
         throw Exception('Stripe publishable key not found in gateway configuration. Available keys: ${gatewayConfig.keys.join(", ")}');
@@ -318,22 +334,30 @@ class _ReviewScreenState extends State<ReviewScreen> {
       
       // Setup Stripe callbacks
       _stripeService.onSuccess = (String paymentIntentId) async {
-        
-        // Place order with payment intent ID
         try {
+          // placeOrder first (same pattern as Razorpay/PhonePe)
           final result = await _checkoutService.placeOrder(
             shippingAddressId: shippingAddressId,
             paymentMethod: 'stripe',
             notes: notes,
             paymentId: paymentIntentId,
           );
-          
-          final orderNumber = result['order_number'] ?? '#VX-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
-          
-          // Clear cart after successful order
+
+          final internalOrderId =
+              (result['order_id'] as num?)?.toInt() ??
+              (result['id'] as num?)?.toInt();
+          final orderNumber = result['order_number'] ??
+              '#VX-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+
+          if (internalOrderId != null) {
+            await _checkoutService.verifyPayment(
+              orderId: internalOrderId,
+              paymentIntentId: paymentIntentId,
+            );
+          }
+
           await _cartService.clearCart();
-          
-          // Navigate to success screen
+
           if (mounted) {
             Navigator.pushNamed(
               context,
@@ -479,12 +503,227 @@ class _ReviewScreenState extends State<ReviewScreen> {
     }
   }
 
+  Future<void> _processPhonePePayment({
+    required int shippingAddressId,
+    String? notes,
+  }) async {
+    try {
+      // 1. Set payment method on the session — also returns environment.
+      final paymentMethodData =
+          await _checkoutService.setPaymentMethod('phonepe');
+      final gatewayConfig =
+          paymentMethodData['gateway_config'] as Map<String, dynamic>?;
+      final envString      = (gatewayConfig?['environment'] as String?)?.toUpperCase() ?? 'UAT';
+      final sdkEnvironment = (envString == 'PRODUCTION')
+          ? PhonePeEnvironment.production
+          : PhonePeEnvironment.sandbox;
+
+      // 2. Place the order first — the backend creates a PhonePe order linked
+      //    to this internal order and returns the authoritative token.
+      final orderResult = await _checkoutService.placeOrder(
+        shippingAddressId: shippingAddressId,
+        paymentMethod: 'phonepe',
+        notes: notes,
+      );
+
+      final internalOrderId =
+          (orderResult['id'] as num?)?.toInt() ??
+          (orderResult['order_id'] as num?)?.toInt();
+
+      final merchantId     = (orderResult['merchant_id']      as String?) ?? '';
+      final orderToken     = (orderResult['phonepe_token']    as String?) ?? '';
+      final phonePeOrderId = (orderResult['phonepe_order_id'] as String?) ?? '';
+
+      if (merchantId.isEmpty || orderToken.isEmpty || phonePeOrderId.isEmpty) {
+        throw Exception(
+            'PhonePe credentials missing from placeOrder response. '
+            'Please ensure PhonePe is configured in the admin panel.');
+      }
+
+      // 3. Initialise the PhonePe SDK.
+      await _phonePeService.initialize(
+        merchantId: merchantId,
+        environment: sdkEnvironment,
+        enableLogging: true,
+      );
+
+      // 4. Launch the PhonePe payment sheet.
+      final phonePeResult = await _phonePeService.startTransaction(
+        orderId: phonePeOrderId,
+        merchantId: merchantId,
+        token: orderToken,
+      );
+
+      if (phonePeResult.isCancelled) {
+        // Order exists in pending state — user can retry from order history.
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('PhonePe payment was cancelled.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      if (!phonePeResult.isSuccess) {
+        throw Exception(phonePeResult.errorMessage ?? 'PhonePe payment failed.');
+      }
+
+      // 5. Verify payment server-side with the internal order_id.
+      if (internalOrderId != null) {
+        await _checkoutService.verifyPayment(
+          orderId: internalOrderId,
+          transactionId: phonePeResult.transactionId,
+        );
+      }
+
+      // 6. Clear cart and navigate to success.
+      await _cartService.clearCart();
+
+      final orderNumber = orderResult['order_number'] ??
+          '#VX-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+
+      if (mounted) {
+        Navigator.pushNamed(
+          context,
+          '/order-success',
+          arguments: {
+            'orderNumber': orderNumber,
+            'totalAmount': _total,
+            'estimatedDelivery': 'Mon, Aug 24',
+          },
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        final message = e is MissingPluginException
+            ? 'PhonePe SDK is not ready. Please reinstall the app.'
+            : 'PhonePe payment failed: $e';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPlacingOrder = false;
+        });
+      }
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────── PayPal ──
+
+  Future<void> _processPayPalPayment({
+    required int shippingAddressId,
+    String? notes,
+  }) async {
+    try {
+      // 1. Place order first — backend creates PayPal Order (v2) and returns
+      //    paypal_order_id + approve_url.
+      final orderResult = await _checkoutService.placeOrder(
+        shippingAddressId: shippingAddressId,
+        paymentMethod: 'paypal',
+        notes: notes,
+      );
+
+      final internalOrderId =
+          (orderResult['order_id'] as num?)?.toInt() ??
+          (orderResult['id'] as num?)?.toInt();
+
+      final paypalOrderId = orderResult['paypal_order_id'] as String?;
+      final approveUrl    = orderResult['approve_url']    as String?;
+
+      if (paypalOrderId == null || approveUrl == null) {
+        throw Exception(
+            'PayPal order details missing from server response. '
+            'Please ensure PayPal is configured in the admin panel.');
+      }
+
+      // 2. Open PayPal WebView — user logs in and approves payment.
+      if (!mounted) return;
+      final paypalResult = await _paypalService.launchCheckout(
+        context: context,
+        approveUrl: approveUrl,
+      );
+
+      if (paypalResult.isCancelled) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('PayPal payment was cancelled.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      if (!paypalResult.isSuccess) {
+        throw Exception(paypalResult.errorMessage ?? 'PayPal payment failed.');
+      }
+
+      // 3. Verify payment — backend CAPTURES the PayPal order and marks it paid.
+      if (internalOrderId != null) {
+        await _checkoutService.verifyPayment(
+          orderId: internalOrderId,
+          // Prefer the token echoed back by PayPal; fall back to the ID we got
+          // from placeOrder (they are the same value).
+          paypalOrderId: paypalResult.paypalOrderId?.isNotEmpty == true
+              ? paypalResult.paypalOrderId
+              : paypalOrderId,
+        );
+      }
+
+      // 4. Clear cart and navigate to success screen.
+      await _cartService.clearCart();
+
+      final orderNumber = orderResult['order_number'] ??
+          '#VX-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+
+      if (mounted) {
+        Navigator.pushNamed(
+          context,
+          '/order-success',
+          arguments: {
+            'orderNumber': orderNumber,
+            'totalAmount': _total,
+            'estimatedDelivery': 'Mon, Aug 24',
+          },
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PayPal payment failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPlacingOrder = false;
+        });
+      }
+    }
+  }
+
   Future<void> _placeOrderDirect({
     required int shippingAddressId,
     required String paymentMethod,
     String? notes,
   }) async {
     try {
+      // Set the payment method on the checkout session first (required by backend)
+      await _checkoutService.setPaymentMethod(paymentMethod);
+
       // Place the order via API
       final result = await _checkoutService.placeOrder(
         shippingAddressId: shippingAddressId,

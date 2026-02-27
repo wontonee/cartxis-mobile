@@ -1,4 +1,4 @@
-package com.example.vortex
+package com.cartxis.app
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

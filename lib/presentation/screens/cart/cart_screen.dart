@@ -24,6 +24,8 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
   CartModel? _cart;
   bool _isLoading = true;
   String? _error;
+  // Tracks cart item IDs whose quantity is being updated (shows per-item spinner)
+  final Set<int> _updatingItems = {};
 
   @override
   void initState() {
@@ -51,8 +53,9 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
   @override
   void didUpdateWidget(CartScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Reload cart when widget updates
-    _loadCart();
+    // Do NOT call _loadCart() here — it triggers on every parent rebuild
+    // (e.g. after onCartChanged fires) and causes a full-screen spinner flicker.
+    // Cart data is refreshed via _silentReload() after each mutation.
   }
 
   Future<void> _loadCart() async {
@@ -60,7 +63,16 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
       _isLoading = true;
       _error = null;
     });
+    await _fetchCart();
+  }
 
+  /// Reload cart data without showing the full-screen spinner.
+  /// Used after quantity changes and item removals to avoid flicker.
+  Future<void> _silentReload() async {
+    await _fetchCart();
+  }
+
+  Future<void> _fetchCart() async {
     try {
       final cart = await _cartService.getCart();
       if (mounted) {
@@ -86,24 +98,17 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
 
   Future<void> _updateQuantity(int cartItemId, int newQuantity) async {
     if (newQuantity < 1) return;
+    if (_updatingItems.contains(cartItemId)) return; // debounce rapid taps
+
+    setState(() => _updatingItems.add(cartItemId));
 
     try {
       await _cartService.updateCartItem(
         cartItemId: cartItemId,
         quantity: newQuantity,
       );
-      _loadCart(); // Reload cart
       widget.onCartChanged?.call();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Cart updated'),
-            duration: Duration(seconds: 1),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
+      await _silentReload(); // no full-screen spinner
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -113,6 +118,8 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
           ),
         );
       }
+    } finally {
+      if (mounted) setState(() => _updatingItems.remove(cartItemId));
     }
   }
 
@@ -139,8 +146,8 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
     if (confirmed == true) {
       try {
         await _cartService.removeFromCart(cartItemId);
-        _loadCart();
         widget.onCartChanged?.call();
+        await _silentReload(); // no full-screen spinner
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -431,6 +438,7 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
                     color: Colors.grey.shade500,
                   ),
                   const SizedBox(height: 8),
+                  // ── bottom row: qty controls + delete ──
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -444,65 +452,91 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
                           ),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Row(
-                          children: [
-                            InkWell(
-                              onTap: () =>
-                                  _updateQuantity(item.id, item.quantity - 1),
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                child: Icon(
-                                  Icons.remove,
-                                  size: 16,
-                                  color: isDark ? Colors.white : Colors.black,
+                        child: _updatingItems.contains(item.id)
+                            ? const SizedBox(
+                                width: 88,
+                                height: 32,
+                                child: Center(
+                                  child: SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
                                 ),
+                              )
+                            : Row(
+                                children: [
+                                  InkWell(
+                                    onTap: () => _updateQuantity(
+                                        item.id, item.quantity - 1),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(6),
+                                      child: Icon(
+                                        Icons.remove,
+                                        size: 16,
+                                        color:
+                                            isDark ? Colors.white : Colors.black,
+                                      ),
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12),
+                                    child: Text(
+                                      '${item.quantity}',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: isDark
+                                            ? Colors.white
+                                            : Colors.black,
+                                      ),
+                                    ),
+                                  ),
+                                  InkWell(
+                                    onTap: () => _updateQuantity(
+                                        item.id, item.quantity + 1),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(6),
+                                      child: const Icon(
+                                        Icons.add,
+                                        size: 16,
+                                        color: AppColors.primary,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                            Container(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 12),
-                              child: Text(
-                                '${item.quantity}',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: isDark ? Colors.white : Colors.black,
-                                ),
-                              ),
-                            ),
-                            InkWell(
-                              onTap: () =>
-                                  _updateQuantity(item.id, item.quantity + 1),
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                child: const Icon(
-                                  Icons.add,
-                                  size: 16,
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
 
-                      // Subtotal and Remove
+                      // Subtotal + delete
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          StyledPriceText(
-                            amount: item.subtotal,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
-                          ),
-                          IconButton(
-                            icon: Icon(
-                              Icons.delete_outline,
-                              color: Colors.red.shade400,
-                              size: 20,
+                          Flexible(
+                            child: StyledPriceText(
+                              amount: item.subtotal,
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
                             ),
-                            onPressed: () =>
-                                _removeItem(item.id, item.product.name),
+                          ),
+                          SizedBox(
+                            width: 36,
+                            height: 36,
+                            child: IconButton(
+                              padding: EdgeInsets.zero,
+                              icon: Icon(
+                                Icons.delete_outline,
+                                color: Colors.red.shade400,
+                                size: 20,
+                              ),
+                              onPressed: () =>
+                                  _removeItem(item.id, item.product.name),
+                            ),
                           ),
                         ],
                       ),

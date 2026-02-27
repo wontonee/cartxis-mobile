@@ -233,8 +233,6 @@ class AuthService {
       headers: headers,
     );
 
-    print('DEBUG: Profile API response: $response');
-
     // Check success first before parsing data
     if (response['success'] == false) {
       throw ApiException(
@@ -265,6 +263,28 @@ class AuthService {
     await prefs.setString(_userKey, _userToJson(apiResponse.data!));
 
     return apiResponse.data!;
+  }
+
+  /// Delete the authenticated user account
+  Future<void> deleteAccount({required String password}) async {
+    final headers = await getAuthHeaders();
+    if (headers == null) {
+      throw ApiException(
+        message: 'Not authenticated',
+        code: 'NOT_AUTHENTICATED',
+      );
+    }
+
+    await _apiClient.delete(
+      ApiConfig.authDeleteAccount,
+      headers: headers,
+      body: {'password': password},
+    );
+
+    // Clear all local auth data
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_tokenKey);
+    await prefs.remove(_userKey);
   }
 
   /// Update user profile
