@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:vortex_app/core/constants/app_colors.dart';
-import 'package:vortex_app/core/constants/app_sizes.dart';
-import 'package:vortex_app/core/theme/text_styles.dart';
-import 'package:vortex_app/data/services/auth_service.dart';
-import 'package:vortex_app/core/network/api_client.dart';
-import 'package:vortex_app/core/network/api_exception.dart';
+import 'package:cartxis_app/core/constants/app_colors.dart';
+import 'package:cartxis_app/core/constants/app_sizes.dart';
+import 'package:cartxis_app/core/theme/text_styles.dart';
+import 'package:cartxis_app/data/services/auth_service.dart';
+import 'package:cartxis_app/core/network/api_exception.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -51,10 +50,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Color _getStrengthColor() {
-    if (_passwordStrength < 0.33) return Colors.red;
-    if (_passwordStrength < 0.66) return Colors.orange;
-    if (_passwordStrength < 1.0) return Colors.yellow.shade600;
-    return Colors.green;
+    if (_passwordStrength < 0.33) return AppColors.error;
+    if (_passwordStrength < 0.66) return AppColors.warning;
+    if (_passwordStrength < 1.0) return const Color(0xFFFBC02D);
+    return AppColors.success;
   }
 
   String _getStrengthText() {
@@ -64,6 +63,53 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return 'Strong';
   }
 
+  Color _textPrimary(bool isDark) =>
+      isDark ? AppColors.darkText : AppColors.textPrimary;
+
+  Color _textSecondary(bool isDark) =>
+      isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+
+  InputDecoration _fieldDecoration({
+    required bool isDark,
+    required String hintText,
+    required Widget prefixIcon,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: AppTextStyles.body2.copyWith(
+        color: isDark ? AppColors.darkTextSecondary : AppColors.textHint,
+      ),
+      prefixIcon: prefixIcon,
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+        borderSide: BorderSide(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        ),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+        borderSide: BorderSide(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+        borderSide: const BorderSide(
+          color: AppColors.primary,
+          width: 1.5,
+        ),
+      ),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 14,
+      ),
+    );
+  }
+
   void _onRegister() async {
     if (_formKey.currentState!.validate() && _acceptTerms) {
       setState(() {
@@ -71,7 +117,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       });
 
       try {
-        // Call API to register
         final loginData = await _authService.register(
           name: _nameController.text.trim(),
           email: _emailController.text.trim(),
@@ -80,26 +125,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
 
         if (mounted) {
-          // Show success message
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Welcome, ${loginData.user.name}!'),
-              backgroundColor: Colors.green,
+              backgroundColor: AppColors.success,
             ),
           );
 
-          // Navigate to home
-          Navigator.of(context).pushReplacementNamed('/home');
+          // Register is pushed on top of Login — replace the whole stack so
+          // Login is not left underneath MainNavigation (post-order popUntil
+          // was landing on Welcome Back while the session was still valid).
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            '/home',
+            (route) => false,
+          );
         }
       } catch (e) {
         if (mounted) {
           String errorMessage = 'An error occurred';
-          
-          // Check if it's an ApiException
+
           if (e is ApiException) {
             errorMessage = e.message;
-            
-            // If there are validation errors, show them
+
             if (e.errors != null && e.errors!.isNotEmpty) {
               final errorMessages = <String>[];
               e.errors!.forEach((field, messages) {
@@ -115,15 +162,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 errorMessage = errorMessages.join('\n');
               }
             }
-            
-            // Debug: Print error details
-          } else {
           }
-          
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(errorMessage),
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.error,
               duration: const Duration(seconds: 5),
             ),
           );
@@ -141,25 +185,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final iconColor = _textSecondary(isDark);
+    final fieldStyle = AppTextStyles.body1.copyWith(color: _textPrimary(isDark));
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF1e1e1e) : Colors.white,
+      backgroundColor:
+          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
       body: SafeArea(
         child: Column(
           children: [
-            // App Bar
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark 
-                    ? const Color(0xFF1e1e1e).withOpacity(0.9) 
-                    : Colors.white.withOpacity(0.9),
-                boxShadow: isDark ? null : [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                  ),
-                ],
+                color: (isDark
+                        ? AppColors.backgroundDark
+                        : AppColors.backgroundLight)
+                    .withOpacity(0.95),
+                boxShadow: isDark
+                    ? null
+                    : [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 10,
+                        ),
+                      ],
               ),
               child: Row(
                 children: [
@@ -170,13 +219,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       height: 40,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: isDark 
-                            ? Colors.white.withOpacity(0.1)
-                            : Colors.grey.shade100,
+                        color: isDark
+                            ? AppColors.surfaceDark
+                            : AppColors.borderLight.withOpacity(0.6),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.arrow_back_ios_new,
                         size: 20,
+                        color: _textPrimary(isDark),
                       ),
                     ),
                   ),
@@ -184,7 +234,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
 
-            // Scrollable Content
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24),
@@ -193,68 +242,42 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header
                       Text(
                         'Create Account',
                         style: AppTextStyles.headline1.copyWith(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : const Color(0xFF212121),
+                          color: _textPrimary(isDark),
                         ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         'Fill in your details to start shopping with Cartxis.',
                         style: AppTextStyles.body1.copyWith(
-                          color: isDark ? Colors.grey.shade400 : const Color(0xFF757575),
+                          color: _textSecondary(isDark),
                         ),
                       ),
                       const SizedBox(height: 32),
 
-                      // Full Name Field
                       Text(
                         'Full Name',
                         style: AppTextStyles.body2.copyWith(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
-                          color: isDark ? Colors.grey.shade200 : const Color(0xFF212121),
+                          color: _textPrimary(isDark),
                         ),
                       ),
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _nameController,
-                        decoration: InputDecoration(
+                        style: fieldStyle,
+                        decoration: _fieldDecoration(
+                          isDark: isDark,
                           hintText: 'John Doe',
-                          hintStyle: TextStyle(color: Colors.grey.shade400),
                           prefixIcon: Icon(
                             Icons.person_outline,
                             size: 20,
-                            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                          ),
-                          filled: true,
-                          fillColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-                            borderSide: BorderSide(
-                              color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-                            borderSide: BorderSide(
-                              color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-                            borderSide: const BorderSide(
-                              color: AppColors.primary,
-                              width: 1.5,
-                            ),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
+                            color: iconColor,
                           ),
                         ),
                         validator: (value) {
@@ -266,51 +289,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // Email Field
                       Text(
                         'Email Address',
                         style: AppTextStyles.body2.copyWith(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
-                          color: isDark ? Colors.grey.shade200 : const Color(0xFF212121),
+                          color: _textPrimary(isDark),
                         ),
                       ),
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
-                        decoration: InputDecoration(
+                        style: fieldStyle,
+                        decoration: _fieldDecoration(
+                          isDark: isDark,
                           hintText: 'example@cartxis.com',
-                          hintStyle: TextStyle(color: Colors.grey.shade400),
                           prefixIcon: Icon(
                             Icons.mail_outline,
                             size: 20,
-                            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
-                          ),
-                          filled: true,
-                          fillColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-                            borderSide: BorderSide(
-                              color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-                            borderSide: BorderSide(
-                              color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-                            borderSide: const BorderSide(
-                              color: AppColors.primary,
-                              width: 1.5,
-                            ),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
+                            color: iconColor,
                           ),
                         ),
                         validator: (value) {
@@ -325,13 +323,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // Password Field
                       Text(
                         'Password',
                         style: AppTextStyles.body2.copyWith(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
-                          color: isDark ? Colors.grey.shade200 : const Color(0xFF212121),
+                          color: _textPrimary(isDark),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -339,13 +336,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         controller: _passwordController,
                         obscureText: _obscurePassword,
                         onChanged: _calculatePasswordStrength,
-                        decoration: InputDecoration(
+                        style: fieldStyle,
+                        decoration: _fieldDecoration(
+                          isDark: isDark,
                           hintText: '••••••••',
-                          hintStyle: TextStyle(color: Colors.grey.shade400),
                           prefixIcon: Icon(
                             Icons.lock_outline,
                             size: 20,
-                            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                            color: iconColor,
                           ),
                           suffixIcon: IconButton(
                             icon: Icon(
@@ -353,38 +351,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   ? Icons.visibility_off_outlined
                                   : Icons.visibility_outlined,
                               size: 20,
-                              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                              color: iconColor,
                             ),
                             onPressed: () {
                               setState(() {
                                 _obscurePassword = !_obscurePassword;
                               });
                             },
-                          ),
-                          filled: true,
-                          fillColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-                            borderSide: BorderSide(
-                              color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-                            borderSide: BorderSide(
-                              color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-                            borderSide: const BorderSide(
-                              color: AppColors.primary,
-                              width: 1.5,
-                            ),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
                           ),
                         ),
                         validator: (value) {
@@ -399,15 +372,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 8),
 
-                      // Password Strength Indicator
                       Row(
                         children: [
                           Expanded(
                             child: LinearProgressIndicator(
                               value: _passwordStrength,
-                              backgroundColor: isDark 
-                                  ? Colors.grey.shade700
-                                  : Colors.grey.shade200,
+                              backgroundColor: isDark
+                                  ? AppColors.borderDark
+                                  : AppColors.borderLight,
                               color: _getStrengthColor(),
                               minHeight: 6,
                               borderRadius: BorderRadius.circular(3),
@@ -426,26 +398,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // Confirm Password Field
                       Text(
                         'Confirm Password',
                         style: AppTextStyles.body2.copyWith(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
-                          color: isDark ? Colors.grey.shade200 : const Color(0xFF212121),
+                          color: _textPrimary(isDark),
                         ),
                       ),
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _confirmPasswordController,
                         obscureText: _obscureConfirmPassword,
-                        decoration: InputDecoration(
+                        style: fieldStyle,
+                        decoration: _fieldDecoration(
+                          isDark: isDark,
                           hintText: '••••••••',
-                          hintStyle: TextStyle(color: Colors.grey.shade400),
                           prefixIcon: Icon(
                             Icons.lock_reset_outlined,
                             size: 20,
-                            color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                            color: iconColor,
                           ),
                           suffixIcon: IconButton(
                             icon: Icon(
@@ -453,38 +425,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   ? Icons.visibility_off_outlined
                                   : Icons.visibility_outlined,
                               size: 20,
-                              color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
+                              color: iconColor,
                             ),
                             onPressed: () {
                               setState(() {
-                                _obscureConfirmPassword = !_obscureConfirmPassword;
+                                _obscureConfirmPassword =
+                                    !_obscureConfirmPassword;
                               });
                             },
-                          ),
-                          filled: true,
-                          fillColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-                            borderSide: BorderSide(
-                              color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-                            borderSide: BorderSide(
-                              color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-                            borderSide: const BorderSide(
-                              color: AppColors.primary,
-                              width: 1.5,
-                            ),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
                           ),
                         ),
                         validator: (value) {
@@ -499,7 +447,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // Terms Checkbox
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -532,27 +479,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   text: 'I agree to the ',
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: isDark 
-                                        ? Colors.grey.shade400
-                                        : const Color(0xFF757575),
+                                    color: _textSecondary(isDark),
                                   ),
-                                  children: [
+                                  children: const [
                                     TextSpan(
                                       text: 'Terms & Conditions',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontWeight: FontWeight.w600,
                                         color: AppColors.primary,
                                       ),
                                     ),
-                                    const TextSpan(text: ' and '),
+                                    TextSpan(text: ' and '),
                                     TextSpan(
                                       text: 'Privacy Policy',
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontWeight: FontWeight.w600,
                                         color: AppColors.primary,
                                       ),
                                     ),
-                                    const TextSpan(text: '.'),
+                                    TextSpan(text: '.'),
                                   ],
                                 ),
                               ),
@@ -562,19 +507,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 24),
 
-                      // Register Button
                       SizedBox(
                         width: double.infinity,
                         height: 52,
                         child: ElevatedButton(
-                          onPressed: (_acceptTerms && !_isLoading) ? _onRegister : null,
+                          onPressed:
+                              (_acceptTerms && !_isLoading) ? _onRegister : null,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
-                            foregroundColor: Colors.white,
-                            disabledBackgroundColor: Colors.grey.shade300,
+                            foregroundColor: AppColors.textInverse,
+                            disabledBackgroundColor:
+                                AppColors.primary.withOpacity(0.4),
+                            disabledForegroundColor:
+                                AppColors.textInverse.withOpacity(0.8),
                             elevation: 0,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+                              borderRadius:
+                                  BorderRadius.circular(AppSizes.radiusMedium),
                             ),
                           ),
                           child: _isLoading
@@ -583,7 +532,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   width: 20,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      AppColors.textInverse,
+                                    ),
                                   ),
                                 )
                               : Text(
@@ -596,16 +547,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 32),
 
-                      // Login Link
                       Center(
                         child: Text.rich(
                           TextSpan(
                             text: 'Already have an account? ',
                             style: TextStyle(
                               fontSize: 16,
-                              color: isDark 
-                                  ? Colors.grey.shade400
-                                  : const Color(0xFF757575),
+                              color: _textSecondary(isDark),
                             ),
                             children: [
                               WidgetSpan(

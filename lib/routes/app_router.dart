@@ -1,26 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:vortex_app/presentation/screens/auth/forgot_password_screen.dart';
-import 'package:vortex_app/presentation/screens/auth/login_screen.dart';
-import 'package:vortex_app/presentation/screens/auth/register_screen.dart';
-import 'package:vortex_app/presentation/screens/auth/reset_password_screen.dart';
-import 'package:vortex_app/presentation/screens/onboarding/onboarding_screen.dart';
-import 'package:vortex_app/presentation/screens/splash/splash_screen.dart';
-import 'package:vortex_app/presentation/screens/products/product_list_screen.dart';
-import 'package:vortex_app/presentation/screens/products/product_detail_screen.dart';
-import 'package:vortex_app/presentation/screens/categories/categories_screen.dart';
-import 'package:vortex_app/presentation/screens/categories/category_products_screen.dart';
-import 'package:vortex_app/presentation/screens/main/main_navigation_screen.dart';
-// import 'package:vortex_app/presentation/screens/checkout/shipping_screen.dart'; // Requires parameters
-import 'package:vortex_app/presentation/screens/checkout/order_success_screen.dart';
-import 'package:vortex_app/presentation/screens/order/order_detail_screen.dart';
-import 'package:vortex_app/presentation/screens/order/order_list_screen.dart';
-import 'package:vortex_app/presentation/screens/profile/edit_profile_screen.dart';
-import 'package:vortex_app/presentation/screens/profile/address_management_screen.dart';
-import 'package:vortex_app/presentation/screens/support/help_support_screen.dart';
-import 'package:vortex_app/presentation/screens/support/about_us_screen.dart';
-import 'package:vortex_app/presentation/screens/support/terms_conditions_screen.dart';
-import 'package:vortex_app/presentation/screens/support/privacy_policy_screen.dart';
-import 'package:vortex_app/presentation/screens/search/search_screen.dart';
+import 'package:cartxis_app/presentation/screens/auth/forgot_password_screen.dart';
+import 'package:cartxis_app/presentation/screens/auth/login_screen.dart';
+import 'package:cartxis_app/presentation/screens/auth/register_screen.dart';
+import 'package:cartxis_app/presentation/screens/auth/reset_password_screen.dart';
+import 'package:cartxis_app/presentation/screens/onboarding/onboarding_screen.dart';
+import 'package:cartxis_app/presentation/screens/splash/splash_screen.dart';
+import 'package:cartxis_app/presentation/screens/products/product_list_screen.dart';
+import 'package:cartxis_app/presentation/screens/products/product_detail_screen.dart';
+import 'package:cartxis_app/presentation/screens/categories/categories_screen.dart';
+import 'package:cartxis_app/presentation/screens/categories/category_products_screen.dart';
+import 'package:cartxis_app/presentation/screens/main/main_navigation_screen.dart';
+// import 'package:cartxis_app/presentation/screens/checkout/shipping_screen.dart'; // Requires parameters
+import 'package:cartxis_app/presentation/screens/checkout/order_success_screen.dart';
+import 'package:cartxis_app/presentation/screens/order/order_detail_screen.dart';
+import 'package:cartxis_app/presentation/screens/order/order_list_screen.dart';
+import 'package:cartxis_app/presentation/screens/profile/edit_profile_screen.dart';
+import 'package:cartxis_app/presentation/screens/profile/address_management_screen.dart';
+import 'package:cartxis_app/presentation/screens/support/help_support_screen.dart';
+import 'package:cartxis_app/presentation/screens/support/about_us_screen.dart';
+import 'package:cartxis_app/presentation/screens/support/terms_conditions_screen.dart';
+import 'package:cartxis_app/presentation/screens/support/privacy_policy_screen.dart';
+import 'package:cartxis_app/presentation/screens/search/search_screen.dart';
 
 /// App router configuration
 class AppRouter {

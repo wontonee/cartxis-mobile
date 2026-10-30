@@ -13,9 +13,9 @@ class AppColors {
   static const Color backgroundLight = Color(0xFFF6F7F8);
   static const Color backgroundDark = Color(0xFF101922);
 
-  // Surface Colors
+  // Surface Colors (dark: elevated slate so inputs/cards read clearly on #101922)
   static const Color surfaceLight = Color(0xFFFFFFFF);
-  static const Color surfaceDark = Color(0xFF2A1A1A);
+  static const Color surfaceDark = Color(0xFF243447);
 
   // Text Colors
   static const Color textPrimary = Color(0xFF212121);
@@ -23,9 +23,9 @@ class AppColors {
   static const Color textHint = Color(0xFF9E9E9E);
   static const Color textInverse = Color(0xFFFFFFFF);
 
-  // Border Colors
+  // Border Colors (dark: visible slate edge on navy surfaces)
   static const Color borderLight = Color(0xFFE0E0E0);
-  static const Color borderDark = Color(0xFF402020);
+  static const Color borderDark = Color(0xFF5A6B7D);
 
   // Status Colors
   static const Color success = Color(0xFF4CAF50);

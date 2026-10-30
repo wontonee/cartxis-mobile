@@ -1,7 +1,7 @@
-name: vortex_app
+name: cartxis_app
 description: Cartxis eCommerce Mobile Application
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -23,6 +23,8 @@ dependencies:
   phonepe_payment_sdk: ^3.0.2
   crypto: ^3.0.7
   webview_flutter: ^4.10.0
+  firebase_core: ^5.1.0
+  firebase_crashlytics: ^6.0.1
 
 dev_dependencies:
   flutter_test:
@@ -40,6 +42,7 @@ flutter:
   assets:
     - assets/logo.png
     - assets/transparent_logo.png
+    - assets/transparent_logo_dark.png
   # assets:
   #   - assets/images/
   #   - assets/icons/

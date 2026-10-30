@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:vortex_app/core/constants/app_colors.dart';
-import 'package:vortex_app/presentation/widgets/price_text.dart';
+import 'package:cartxis_app/core/constants/app_colors.dart';
+import 'package:cartxis_app/presentation/widgets/price_text.dart';
+import 'package:cartxis_app/routes/app_router.dart';
 
 class OrderSuccessScreen extends StatefulWidget {
   final String orderNumber;
@@ -71,12 +72,13 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
                       const SizedBox(height: 40),
                       _buildSuccessIcon(isDark),
                       const SizedBox(height: 32),
-                      const Text(
+                      Text(
                         'Order Placed!',
                         style: TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
                           letterSpacing: -0.5,
+                          color: isDark ? Colors.white : const Color(0xFF0F172A),
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -275,6 +277,7 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
             fontSize: isOrderNumber ? 16 : 14,
             fontWeight: FontWeight.bold,
             fontFamily: isOrderNumber ? 'monospace' : null,
+            color: isDark ? Colors.white : const Color(0xFF0F172A),
           ),
         ),
       ],
@@ -360,14 +363,13 @@ class _OrderSuccessScreenState extends State<OrderSuccessScreen>
             height: 56,
             child: OutlinedButton(
               onPressed: () {
-                // Pop all routes and return to home with refresh flag
-                Navigator.of(context).popUntil((route) {
-                  if (route.isFirst) {
-                    // Trigger cart refresh on the main screen
-                    return true;
-                  }
-                  return false;
-                });
+                // Always reset to MainNavigation — do not popUntil(isFirst),
+                // which resurfaces Login if it was left under /home (e.g.
+                // register was pushNamed onto Login then replaced with Home).
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  AppRouter.home,
+                  (route) => false,
+                );
               },
               style: OutlinedButton.styleFrom(
                 foregroundColor: isDark ? Colors.grey.shade300 : Colors.grey.shade700,

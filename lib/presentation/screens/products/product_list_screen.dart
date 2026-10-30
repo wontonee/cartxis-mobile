@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:vortex_app/core/constants/app_colors.dart';
+import 'package:cartxis_app/core/constants/app_colors.dart';
 import '../../widgets/price_text.dart';
 
 class ProductListScreen extends StatefulWidget {

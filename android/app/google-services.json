@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "258148217397",
+    "project_id": "cartxis",
+    "storage_bucket": "cartxis.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:258148217397:android:c3e24447406849a56c377c",
+        "android_client_info": {
+          "package_name": "com.cartxis.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDaxyW_OfVYzYl2BmmCNLzwGjwjW-N-pAs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
-import 'package:vortex_app/core/constants/app_colors.dart';
-import 'package:vortex_app/data/services/checkout_service.dart';
-import 'package:vortex_app/data/services/cart_service.dart';
-import 'package:vortex_app/payments/gateways/paypal_service.dart';
-import 'package:vortex_app/payments/gateways/phonepe_service.dart';
-import 'package:vortex_app/payments/gateways/razorpay_service.dart';
-import 'package:vortex_app/payments/gateways/stripe_service.dart';
-import 'package:vortex_app/presentation/widgets/price_text.dart';
+import 'package:cartxis_app/core/constants/app_colors.dart';
+import 'package:cartxis_app/data/services/checkout_service.dart';
+import 'package:cartxis_app/data/services/cart_service.dart';
+import 'package:cartxis_app/payments/gateways/paypal_service.dart';
+import 'package:cartxis_app/payments/gateways/phonepe_service.dart';
+import 'package:cartxis_app/payments/gateways/razorpay_service.dart';
+import 'package:cartxis_app/payments/gateways/stripe_service.dart';
+import 'package:cartxis_app/presentation/widgets/price_text.dart';
 
 class ReviewScreen extends StatefulWidget {
   final Map<String, dynamic> checkoutSummary;
@@ -205,7 +205,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
             razorpaySignature: response.signature,
           );
 
-          await _cartService.clearCart();
+          try {
+            await _cartService.clearCart();
+          } catch (_) {}
 
           if (mounted) {
             Navigator.pushNamed(
@@ -356,7 +358,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
             );
           }
 
-          await _cartService.clearCart();
+          try {
+            await _cartService.clearCart();
+          } catch (_) {}
 
           if (mounted) {
             Navigator.pushNamed(
@@ -579,8 +583,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
         );
       }
 
-      // 6. Clear cart and navigate to success.
-      await _cartService.clearCart();
+      // 6. Clear cart (best-effort) and navigate to success.
+      try {
+        await _cartService.clearCart();
+      } catch (_) {}
 
       final orderNumber = orderResult['order_number'] ??
           '#VX-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
@@ -680,8 +686,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
         );
       }
 
-      // 4. Clear cart and navigate to success screen.
-      await _cartService.clearCart();
+      // 4. Clear cart (best-effort) and navigate to success screen.
+      try {
+        await _cartService.clearCart();
+      } catch (_) {}
 
       final orderNumber = orderResult['order_number'] ??
           '#VX-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
@@ -732,10 +740,13 @@ class _ReviewScreenState extends State<ReviewScreen> {
       );
       
       final orderNumber = result['order_number'] ?? '#VX-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
-      
-      // Clear cart after successful order
-      await _cartService.clearCart();
-      
+
+      // Backend already clears cart items in placeOrder; treat clear as best-effort
+      // so a post-order cart call cannot block success navigation.
+      try {
+        await _cartService.clearCart();
+      } catch (_) {}
+
       // Navigate to success screen
       if (mounted) {
         Navigator.pushNamed(
@@ -760,9 +771,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleColor = isDark ? AppColors.darkText : const Color(0xFF0F172A);
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF101922) : const Color(0xFFF6F7F8),
+      backgroundColor:
+          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
       body: Stack(
         children: [
           // Main scrollable content
@@ -772,18 +785,21 @@ class _ReviewScreenState extends State<ReviewScreen> {
               SliverAppBar(
                 pinned: true,
                 elevation: 0,
-                backgroundColor: isDark 
-                    ? const Color(0xFF101922).withOpacity(0.95) 
-                    : const Color(0xFFF6F7F8).withOpacity(0.95),
+                backgroundColor: isDark
+                    ? AppColors.backgroundDark.withOpacity(0.95)
+                    : AppColors.backgroundLight.withOpacity(0.95),
+                foregroundColor: titleColor,
+                iconTheme: IconThemeData(color: titleColor),
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back_ios_new, size: 20),
                   onPressed: () => Navigator.pop(context),
                 ),
-                title: const Text(
+                title: Text(
                   'Review Order',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
+                    color: titleColor,
                   ),
                 ),
                 centerTitle: true,
@@ -801,13 +817,13 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
                       const SizedBox(height: 24),
 
-                      _buildCartItemsSection(),
+                      _buildCartItemsSection(isDark),
                       const SizedBox(height: 24),
-                      _buildShippingPaymentSection(),
+                      _buildShippingPaymentSection(isDark),
                       const SizedBox(height: 24),
-                      _buildOrderNotesSection(),
+                      _buildOrderNotesSection(isDark),
                       const SizedBox(height: 24),
-                      _buildOrderSummarySection(),
+                      _buildOrderSummarySection(isDark),
                     ],
                   ),
                 ),
@@ -893,16 +909,20 @@ class _ReviewScreenState extends State<ReviewScreen> {
     );
   }
 
-  Widget _buildCartItemsSection() {
+  Widget _buildCartItemsSection(bool isDark) {
+    final titleColor = isDark ? AppColors.darkText : const Color(0xFF0F172A);
+    final mutedColor =
+        isDark ? AppColors.darkTextSecondary : Colors.grey.shade600;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Items in your cart',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: titleColor,
           ),
         ),
         const SizedBox(height: 12),
@@ -914,35 +934,46 @@ class _ReviewScreenState extends State<ReviewScreen> {
             ),
           )
         else if (_cartItems.isEmpty)
-          const Center(
+          Center(
             child: Padding(
-              padding: EdgeInsets.all(20.0),
-              child: Text('No items in cart'),
+              padding: const EdgeInsets.all(20.0),
+              child: Text(
+                'No items in cart',
+                style: TextStyle(color: mutedColor),
+              ),
             ),
           )
         else
-          ..._cartItems.map((item) => _buildCartItem(item)).toList(),
+          ..._cartItems.map((item) => _buildCartItem(item, isDark)).toList(),
       ],
     );
   }
 
-  Widget _buildCartItem(Map<String, dynamic> item) {
+  Widget _buildCartItem(Map<String, dynamic> item, bool isDark) {
     final product = item['product'] ?? {};
     final productName = product['name'] ?? item['name'] ?? 'Product';
     final productImage = product['image_url'] ?? item['image'] ?? '';
     final quantity = item['quantity'] ?? 1;
     final variant = item['variant'];
-    
+    final cardColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final borderColor =
+        isDark ? AppColors.darkDivider : const Color(0xFFF1F1F1);
+    final titleColor = isDark ? AppColors.darkText : const Color(0xFF0F172A);
+    final mutedColor =
+        isDark ? AppColors.darkTextSecondary : Colors.grey.shade600;
+    final chipBg =
+        isDark ? const Color(0xFF334155) : const Color(0xFFF1F1F1);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF1F1F1)),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -955,7 +986,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
             height: 70,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
-              color: Colors.grey[200],
+              color: isDark ? const Color(0xFF334155) : Colors.grey[200],
               image: productImage.isNotEmpty
                   ? DecorationImage(
                       image: NetworkImage(productImage),
@@ -964,7 +995,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   : null,
             ),
             child: productImage.isEmpty
-                ? const Icon(Icons.image, color: Colors.grey)
+                ? Icon(Icons.image, color: mutedColor)
                 : null,
           ),
           const SizedBox(width: 12),
@@ -974,10 +1005,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
               children: [
                 Text(
                   productName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black,
+                    color: titleColor,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -991,14 +1022,15 @@ class _ReviewScreenState extends State<ReviewScreen> {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF1F1F1),
+                        color: chipBg,
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
                         'Qty: $quantity',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
+                          color: titleColor,
                         ),
                       ),
                     ),
@@ -1008,7 +1040,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                         'Size: ${variant['size'] ?? ''} • ${variant['color'] ?? ''}',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey[600],
+                          color: mutedColor,
                         ),
                       ),
                     ],
@@ -1028,20 +1060,27 @@ class _ReviewScreenState extends State<ReviewScreen> {
     );
   }
 
-  Widget _buildShippingPaymentSection() {
+  Widget _buildShippingPaymentSection(bool isDark) {
+    final titleColor = isDark ? AppColors.darkText : const Color(0xFF0F172A);
+    final mutedColor =
+        isDark ? AppColors.darkTextSecondary : Colors.grey.shade600;
+    final chipBg =
+        isDark ? const Color(0xFF334155) : const Color(0xFFF1F1F1);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Shipping & Payment',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: titleColor,
           ),
         ),
         const SizedBox(height: 12),
         _buildInfoCard(
+          isDark: isDark,
           icon: Icons.location_on,
           title: 'SHIPPING ADDRESS',
           child: Column(
@@ -1049,10 +1088,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
             children: [
               Text(
                 widget.selectedAddress['name'] ?? 'Shipping Address',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: Colors.black,
+                  color: titleColor,
                 ),
               ),
               const SizedBox(height: 4),
@@ -1060,7 +1099,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 '${widget.selectedAddress['address'] ?? ''}\n${widget.selectedAddress['city'] ?? ''}, ${widget.selectedAddress['state'] ?? ''} ${widget.selectedAddress['postal_code'] ?? ''}',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey[600],
+                  color: mutedColor,
                   height: 1.5,
                 ),
               ),
@@ -1069,18 +1108,20 @@ class _ReviewScreenState extends State<ReviewScreen> {
         ),
         const SizedBox(height: 12),
         _buildInfoCard(
+          isDark: isDark,
           icon: Icons.receipt_long,
           title: 'BILLING ADDRESS',
           child: Text(
             'Same as shipping address',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey[600],
+              color: mutedColor,
             ),
           ),
         ),
         const SizedBox(height: 12),
         _buildInfoCard(
+          isDark: isDark,
           icon: Icons.local_shipping,
           title: 'SHIPPING METHOD',
           child: Row(
@@ -1091,35 +1132,41 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.selectedShippingMethod['name'] ?? 'Standard Shipping',
-                      style: const TextStyle(
+                      widget.selectedShippingMethod['name'] ??
+                          'Standard Shipping',
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: Colors.black,
+                        color: titleColor,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      widget.selectedShippingMethod['description'] ?? 'Delivery information',
+                      widget.selectedShippingMethod['description'] ??
+                          'Delivery information',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey[600],
+                        color: mutedColor,
                       ),
                     ),
                   ],
                 ),
               ),
               StyledPriceText(
-                amount: (widget.checkoutSummary['shipping_cost'] as num?)?.toDouble() ?? 0.0,
+                amount:
+                    (widget.checkoutSummary['shipping_cost'] as num?)
+                            ?.toDouble() ??
+                        0.0,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: Colors.black,
+                color: titleColor,
               ),
             ],
           ),
         ),
         const SizedBox(height: 12),
         _buildInfoCard(
+          isDark: isDark,
           icon: Icons.credit_card,
           title: 'PAYMENT METHOD',
           child: Row(
@@ -1130,26 +1177,30 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF1F1F1),
+                  color: chipBg,
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
-                  (widget.selectedPaymentMethod['code'] ?? 'PAYMENT').toUpperCase(),
-                  style: const TextStyle(
+                  (widget.selectedPaymentMethod['code'] ?? 'PAYMENT')
+                      .toUpperCase(),
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A1F71),
+                    color: isDark
+                        ? AppColors.primaryLight
+                        : const Color(0xFF1A1F71),
                   ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  widget.selectedPaymentMethod['name'] ?? 'Selected payment method',
-                  style: const TextStyle(
+                  widget.selectedPaymentMethod['name'] ??
+                      'Selected payment method',
+                  style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
-                    color: Colors.black,
+                    color: titleColor,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1163,19 +1214,26 @@ class _ReviewScreenState extends State<ReviewScreen> {
   }
 
   Widget _buildInfoCard({
+    required bool isDark,
     required IconData icon,
     required String title,
     required Widget child,
   }) {
+    final cardColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final borderColor =
+        isDark ? AppColors.darkDivider : const Color(0xFFF1F1F1);
+    final labelColor =
+        isDark ? AppColors.darkTextSecondary : Colors.grey.shade500;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF1F1F1)),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -1192,7 +1250,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                   Icon(
                     icon,
                     size: 20,
-                    color: Colors.grey[500],
+                    color: labelColor,
                   ),
                   const SizedBox(width: 8),
                   Text(
@@ -1200,7 +1258,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey[500],
+                      color: labelColor,
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -1210,7 +1268,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                 onTap: () {
                   // Handle edit action
                 },
-                child: Text(
+                child: const Text(
                   'Edit',
                   style: TextStyle(
                     fontSize: 14,
@@ -1231,27 +1289,32 @@ class _ReviewScreenState extends State<ReviewScreen> {
     );
   }
 
-  Widget _buildOrderNotesSection() {
+  Widget _buildOrderNotesSection(bool isDark) {
+    final titleColor = isDark ? AppColors.darkText : const Color(0xFF0F172A);
+    final cardColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final borderColor =
+        isDark ? AppColors.darkDivider : const Color(0xFFF1F1F1);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Order Notes',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: titleColor,
           ),
         ),
         const SizedBox(height: 12),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: cardColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFF1F1F1)),
+            border: Border.all(color: borderColor),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.03),
+                color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -1263,15 +1326,17 @@ class _ReviewScreenState extends State<ReviewScreen> {
             decoration: InputDecoration(
               hintText: 'Add a note to your order (optional)',
               hintStyle: TextStyle(
-                color: Colors.grey[400],
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : Colors.grey[400],
                 fontSize: 14,
               ),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.all(16),
             ),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              color: Colors.black,
+              color: titleColor,
             ),
           ),
         ),
@@ -1279,28 +1344,33 @@ class _ReviewScreenState extends State<ReviewScreen> {
     );
   }
 
-  Widget _buildOrderSummarySection() {
+  Widget _buildOrderSummarySection(bool isDark) {
+    final titleColor = isDark ? AppColors.darkText : const Color(0xFF0F172A);
+    final cardColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final borderColor =
+        isDark ? AppColors.darkDivider : const Color(0xFFF1F1F1);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Order Summary',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: titleColor,
           ),
         ),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: cardColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFF1F1F1)),
+            border: Border.all(color: borderColor),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.03),
+                color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -1308,40 +1378,40 @@ class _ReviewScreenState extends State<ReviewScreen> {
           ),
           child: Column(
             children: [
-              _buildSummaryRow('Subtotal', _subtotal),
+              _buildSummaryRow('Subtotal', _subtotal, isDark: isDark),
               const SizedBox(height: 12),
-              _buildSummaryRow('Shipping', _shipping),
+              _buildSummaryRow('Shipping', _shipping, isDark: isDark),
               const SizedBox(height: 12),
-              _buildSummaryRow(
-                  'Tax (Estimated)', _tax),
+              _buildSummaryRow('Tax (Estimated)', _tax, isDark: isDark),
               const SizedBox(height: 12),
               _buildSummaryRow(
                 'Discount (SummerSale)',
                 -_discount,
+                isDark: isDark,
                 color: const Color(0xFF10B981),
               ),
               const SizedBox(height: 16),
               Container(
                 height: 1,
-                color: const Color(0xFFF1F1F1),
+                color: borderColor,
               ),
               const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Total',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                      color: titleColor,
                     ),
                   ),
                   StyledPriceText(
                     amount: _total,
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    color: titleColor,
                   ),
                 ],
               ),
@@ -1352,7 +1422,16 @@ class _ReviewScreenState extends State<ReviewScreen> {
     );
   }
 
-  Widget _buildSummaryRow(String label, double value, {Color? color}) {
+  Widget _buildSummaryRow(
+    String label,
+    double value, {
+    required bool isDark,
+    Color? color,
+  }) {
+    final mutedColor =
+        isDark ? AppColors.darkTextSecondary : Colors.grey.shade600;
+    final valueColor = isDark ? AppColors.darkText : const Color(0xFF0F172A);
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -1360,7 +1439,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
           label,
           style: TextStyle(
             fontSize: 14,
-            color: color ?? Colors.grey[600],
+            color: color ?? mutedColor,
             fontWeight: color != null ? FontWeight.w500 : FontWeight.normal,
           ),
         ),
@@ -1368,7 +1447,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
           amount: value,
           fontSize: 14,
           fontWeight: FontWeight.w500,
-          color: color ?? Colors.black,
+          color: color ?? valueColor,
         ),
       ],
     );
@@ -1376,24 +1455,24 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
   Widget _buildBottomBar() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Positioned(
       bottom: 0,
       left: 0,
       right: 0,
       child: Container(
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E2936) : Colors.white,
+          color: isDark ? const Color(0xFF1E293B) : Colors.white,
           border: Border(
             top: BorderSide(
-              color: isDark 
-                  ? const Color(0xFF334155) 
+              color: isDark
+                  ? AppColors.darkDivider
                   : const Color(0xFFE2E8F0),
             ),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
               blurRadius: 8,
               offset: const Offset(0, -4),
             ),

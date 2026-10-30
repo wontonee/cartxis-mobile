@@ -1696,7 +1696,7 @@ flutter build appbundle --flavor production -t lib/main_production.dart
 ## 19. Dependencies (pubspec.yaml)
 
 ```yaml
-name: vortex_app
+name: cartxis_app
 description: Vortex eCommerce Mobile Application
 version: 1.0.0+1
 

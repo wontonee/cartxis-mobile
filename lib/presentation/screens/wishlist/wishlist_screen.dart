@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:vortex_app/core/constants/app_colors.dart';
-import 'package:vortex_app/presentation/widgets/price_text.dart';
-import 'package:vortex_app/data/services/wishlist_service.dart';
-import 'package:vortex_app/data/services/cart_service.dart';
-import 'package:vortex_app/data/models/wishlist_model.dart';
-import 'package:vortex_app/presentation/widgets/skeleton_loader.dart';
+import 'package:cartxis_app/core/constants/app_colors.dart';
+import 'package:cartxis_app/presentation/widgets/price_text.dart';
+import 'package:cartxis_app/data/services/wishlist_service.dart';
+import 'package:cartxis_app/data/services/cart_service.dart';
+import 'package:cartxis_app/data/models/wishlist_model.dart';
+import 'package:cartxis_app/presentation/widgets/skeleton_loader.dart';
 
 class WishlistScreen extends StatefulWidget {
   const WishlistScreen({super.key});

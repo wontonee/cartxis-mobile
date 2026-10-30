@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'package:vortex_app/core/constants/app_colors.dart';
-import 'package:vortex_app/data/models/category_model.dart';
-import 'package:vortex_app/data/models/product_model.dart';
-import 'package:vortex_app/data/services/category_service.dart';
-import 'package:vortex_app/data/services/search_service.dart';
+import 'package:cartxis_app/core/constants/app_colors.dart';
+import 'package:cartxis_app/data/models/category_model.dart';
+import 'package:cartxis_app/data/models/product_model.dart';
+import 'package:cartxis_app/data/services/category_service.dart';
+import 'package:cartxis_app/data/services/search_service.dart';
 
 class SearchScreen extends StatefulWidget {
   final String? initialQuery;

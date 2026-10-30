@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:vortex_app/core/theme/app_theme.dart';
-import 'package:vortex_app/routes/app_router.dart';
-import 'package:vortex_app/data/services/api_sync_service.dart';
+import 'package:cartxis_app/core/theme/app_theme.dart';
+import 'package:cartxis_app/core/theme/theme_controller.dart';
+import 'package:cartxis_app/routes/app_router.dart';
+import 'package:cartxis_app/data/services/api_sync_service.dart';
 
 class CartxisApp extends StatefulWidget {
   const CartxisApp({super.key});
@@ -13,18 +14,25 @@ class CartxisApp extends StatefulWidget {
 
 class _CartxisAppState extends State<CartxisApp> with WidgetsBindingObserver {
   final ApiSyncService _apiSyncService = ApiSyncService();
+  final ThemeController _themeController = ThemeController.instance;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _themeController.addListener(_onThemeChanged);
     _sendHeartbeat();
   }
 
   @override
   void dispose() {
+    _themeController.removeListener(_onThemeChanged);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  void _onThemeChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -42,40 +50,34 @@ class _CartxisAppState extends State<CartxisApp> with WidgetsBindingObserver {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // Set system UI overlay style
+  void _applySystemUi(Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
     SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
+      SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-        statusBarBrightness: Brightness.light,
+        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+        systemNavigationBarColor:
+            isDark ? const Color(0xFF101922) : Colors.white,
+        systemNavigationBarIconBrightness:
+            isDark ? Brightness.light : Brightness.dark,
       ),
     );
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Cartxis',
       debugShowCheckedModeBanner: false,
-      
-      // Theme
       theme: AppTheme.lightTheme(),
       darkTheme: AppTheme.darkTheme(),
-      themeMode: ThemeMode.system, // TODO: Make this configurable via settings
-      
-      // Routing
+      themeMode: _themeController.themeMode,
       initialRoute: AppRouter.splash,
       onGenerateRoute: AppRouter.generateRoute,
-      
-      // Localization (TODO: Add when implementing i18n)
-      // locale: const Locale('en', 'US'),
-      // supportedLocales: const [
-      //   Locale('en', 'US'),
-      // ],
-      
-      // Builder for global configurations
       builder: (context, child) {
+        _applySystemUi(Theme.of(context).brightness);
         return MediaQuery(
-          // Prevent text scaling beyond reasonable limits
           data: MediaQuery.of(context).copyWith(
             textScaler: TextScaler.linear(
               MediaQuery.of(context).textScaleFactor.clamp(0.8, 1.2),

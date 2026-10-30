@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:vortex_app/core/constants/app_colors.dart';
-import 'package:vortex_app/presentation/screens/home/home_screen.dart';
-import 'package:vortex_app/presentation/screens/categories/categories_screen.dart';
-import 'package:vortex_app/presentation/screens/categories/category_products_screen.dart';
-import 'package:vortex_app/presentation/screens/cart/cart_screen.dart';
-import 'package:vortex_app/presentation/screens/wishlist/wishlist_screen.dart';
-import 'package:vortex_app/presentation/screens/profile/profile_screen.dart';
-import 'package:vortex_app/presentation/screens/products/new_arrivals_screen.dart';
-import 'package:vortex_app/presentation/screens/products/flash_sales_screen.dart';
-import 'package:vortex_app/presentation/screens/products/featured_products_screen.dart';
-import 'package:vortex_app/data/services/cart_service.dart';
+import 'package:cartxis_app/core/constants/app_colors.dart';
+import 'package:cartxis_app/presentation/screens/home/home_screen.dart';
+import 'package:cartxis_app/presentation/screens/categories/categories_screen.dart';
+import 'package:cartxis_app/presentation/screens/categories/category_products_screen.dart';
+import 'package:cartxis_app/presentation/screens/cart/cart_screen.dart';
+import 'package:cartxis_app/presentation/screens/wishlist/wishlist_screen.dart';
+import 'package:cartxis_app/presentation/screens/profile/profile_screen.dart';
+import 'package:cartxis_app/presentation/screens/products/new_arrivals_screen.dart';
+import 'package:cartxis_app/presentation/screens/products/flash_sales_screen.dart';
+import 'package:cartxis_app/presentation/screens/products/featured_products_screen.dart';
+import 'package:cartxis_app/data/services/cart_service.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});

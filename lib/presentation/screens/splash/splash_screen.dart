@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:vortex_app/core/constants/app_colors.dart';
-import 'package:vortex_app/core/constants/app_sizes.dart';
-import 'package:vortex_app/core/constants/app_strings.dart';
-import 'package:vortex_app/core/theme/text_styles.dart';
-import 'package:vortex_app/data/services/auth_service.dart';
+import 'package:flutter/services.dart';
+import 'package:cartxis_app/core/constants/app_colors.dart';
+import 'package:cartxis_app/core/constants/app_strings.dart';
+import 'package:cartxis_app/data/services/auth_service.dart';
+import 'package:cartxis_app/presentation/screens/auth/widgets/auth_logo.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -13,271 +13,211 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
+    with TickerProviderStateMixin {
+  late final AnimationController _entrance;
+  late final AnimationController _pulse;
+  late final Animation<double> _fade;
+  late final Animation<double> _scale;
+  late final Animation<Offset> _slide;
   final _authService = AuthService();
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
+
+    _entrance = AnimationController(
       vsync: this,
+      duration: const Duration(milliseconds: 1100),
     );
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat(reverse: true);
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    _fade = CurvedAnimation(parent: _entrance, curve: Curves.easeOutCubic);
+    _scale = Tween<double>(begin: 0.92, end: 1.0).animate(
+      CurvedAnimation(parent: _entrance, curve: Curves.easeOutBack),
     );
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _entrance, curve: Curves.easeOutCubic));
 
-    _controller.forward();
+    _entrance.forward();
+    _bootstrap();
+  }
 
-    // Navigate after 3 seconds (checking auth state)
-    Future.delayed(const Duration(seconds: 3), () async {
-      if (mounted) {
-        final isLoggedIn = await _authService.isLoggedIn();
-        if (isLoggedIn) {
-          Navigator.of(context).pushReplacementNamed('/home');
-        } else {
-          Navigator.of(context).pushReplacementNamed('/onboarding');
-        }
-      }
-    });
+  Future<void> _bootstrap() async {
+    final results = await Future.wait<Object?>([
+      _authService.isLoggedIn(),
+      Future<void>.delayed(const Duration(milliseconds: 2200)),
+    ]);
+
+    if (!mounted) return;
+
+    final isLoggedIn = results.first as bool;
+    Navigator.of(context).pushReplacementNamed(
+      isLoggedIn ? '/home' : '/onboarding',
+    );
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _entrance.dispose();
+    _pulse.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: AppColors.primaryGradient,
-          ),
-        ),
-        child: Stack(
+    final bottom = MediaQuery.paddingOf(context).bottom;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark.copyWith(
+        statusBarColor: Colors.transparent,
+        systemNavigationBarColor: AppColors.backgroundLight,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: AppColors.backgroundLight,
+        body: Stack(
+          fit: StackFit.expand,
           children: [
-            // Background blur circles
-            Positioned(
-              top: -MediaQuery.of(context).size.height * 0.1,
-              right: -MediaQuery.of(context).size.width * 0.1,
-              child: Container(
-                width: MediaQuery.of(context).size.width * 0.7,
-                height: MediaQuery.of(context).size.height * 0.5,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.05),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.white.withOpacity(0.05),
-                      blurRadius: 80,
-                      spreadRadius: 40,
-                    ),
+            // Soft brand atmosphere — light canvas, not a heavy blue wash.
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFFFFFFFF),
+                    AppColors.backgroundLight,
+                    Color(0xFFEAF4FF),
                   ],
+                  stops: [0.0, 0.55, 1.0],
                 ),
               ),
             ),
             Positioned(
-              top: MediaQuery.of(context).size.height * 0.4,
-              left: -MediaQuery.of(context).size.width * 0.2,
-              child: Container(
-                width: MediaQuery.of(context).size.width * 0.8,
-                height: MediaQuery.of(context).size.height * 0.6,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFF1E3A8A).withOpacity(0.2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF1E3A8A).withOpacity(0.2),
-                      blurRadius: 100,
-                      spreadRadius: 50,
-                    ),
-                  ],
-                ),
+              top: -80,
+              right: -60,
+              child: _GlowOrb(
+                size: 220,
+                color: AppColors.primary.withValues(alpha: 0.10),
+              ),
+            ),
+            Positioned(
+              bottom: 120,
+              left: -90,
+              child: _GlowOrb(
+                size: 280,
+                color: AppColors.primaryLight.withValues(alpha: 0.12),
               ),
             ),
 
-            // Main Content
+            // Brand mark
             Center(
               child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Logo Container
-                    Container(
-                      width: 112,
-                      height: 112,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(32),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: Stack(
-                        children: [
-                          const Center(
-                            child: Icon(
-                              Icons.shopping_bag,
-                              size: AppSizes.iconHuge,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                          // Small decorative circles
-                          Positioned(
-                            top: -2,
-                            right: -2,
-                            child: Container(
-                              width: 24,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white.withOpacity(0.2),
-                                border: Border.all(
-                                  color: Colors.white.withOpacity(0.4),
-                                  width: 2,
-                                ),
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: -1,
-                            left: -1,
-                            child: Container(
-                              width: 16,
-                              height: 16,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: const Color(0xFF93C5FD).withOpacity(0.3),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    // App Name
-                    Text(
-                      AppStrings.appName,
-                      style: AppTextStyles.headline1.copyWith(
-                        fontSize: 36,
-                        color: Colors.white,
-                        shadows: [
-                          Shadow(
-                            color: Colors.black.withOpacity(0.1),
-                            offset: const Offset(0, 2),
-                            blurRadius: 4,
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // App Tagline with decorative lines
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                opacity: _fade,
+                child: SlideTransition(
+                  position: _slide,
+                  child: ScaleTransition(
+                    scale: _scale,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Container(
-                          width: 24,
-                          height: 1,
-                          color: const Color(0xFFBFDBFE).withOpacity(0.5),
+                        const AuthLogo(
+                          width: 248,
+                          height: 96,
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(height: 20),
                         Text(
-                          AppStrings.appTagline.toUpperCase(),
-                          style: AppTextStyles.overline.copyWith(
-                            fontSize: 12,
-                            color: const Color(0xFFEFF6FF),
-                            letterSpacing: 4,
+                          'Commerce, simplified',
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.4,
+                            color: AppColors.textSecondary.withValues(
+                              alpha: 0.9,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Container(
-                          width: 24,
-                          height: 1,
-                          color: const Color(0xFFBFDBFE).withOpacity(0.5),
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
 
-            // Bottom Content
+            // Bottom progress + version
             Positioned(
-              bottom: 0,
               left: 0,
               right: 0,
-              child: Column(
-                children: [
-                  // Loading Spinner
-                  const SizedBox(
-                    width: 32,
-                    height: 32,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 3,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      backgroundColor: Color(0x33FFFFFF),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Loading Text
-                  TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0.4, end: 1.0),
-                    duration: const Duration(milliseconds: 1500),
-                    curve: Curves.easeInOut,
-                    builder: (context, value, child) {
-                      return Opacity(
-                        opacity: value,
-                        child: Text(
-                          AppStrings.checkingAuth,
-                          style: AppTextStyles.caption.copyWith(
-                            color: Colors.white.withOpacity(0.6),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
+              bottom: bottom + 40,
+              child: FadeTransition(
+                opacity: _fade,
+                child: Column(
+                  children: [
+                    AnimatedBuilder(
+                      animation: _pulse,
+                      builder: (context, _) {
+                        return SizedBox(
+                          width: 120,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(99),
+                            child: LinearProgressIndicator(
+                              minHeight: 3,
+                              backgroundColor: AppColors.primary.withValues(
+                                alpha: 0.12,
+                              ),
+                              color: AppColors.primary.withValues(
+                                alpha: 0.55 + (_pulse.value * 0.35),
+                              ),
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Version Info
-                  Text(
-                    '${AppStrings.appVersion} • ${AppStrings.poweredBy}',
-                    style: AppTextStyles.overline.copyWith(
-                      fontSize: 10,
-                      color: Colors.white.withOpacity(0.3),
-                      letterSpacing: 1,
+                        );
+                      },
                     ),
-                  ),
-
-                  SizedBox(
-                    height: MediaQuery.of(context).padding.bottom + 48,
-                  ),
-                ],
+                    const SizedBox(height: 18),
+                    Text(
+                      'v${AppStrings.appVersion}',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.8,
+                        color: AppColors.textHint.withValues(alpha: 0.85),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GlowOrb extends StatelessWidget {
+  const _GlowOrb({required this.size, required this.color});
+
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [color, color.withValues(alpha: 0)],
+          ),
         ),
       ),
     );

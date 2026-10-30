@@ -1,5 +1,5 @@
-import 'package:vortex_app/core/config/api_config.dart';
-import 'package:vortex_app/core/network/api_client.dart';
+import 'package:cartxis_app/core/config/api_config.dart';
+import 'package:cartxis_app/core/network/api_client.dart';
 
 /// Represents a single order item (one product line inside an order).
 class OrderItem {

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:vortex_app/core/constants/app_colors.dart';
-import 'package:vortex_app/data/services/product_service.dart';
-import 'package:vortex_app/data/services/cart_service.dart';
-import 'package:vortex_app/data/services/wishlist_service.dart';
-import 'package:vortex_app/data/models/product_model.dart';
-import 'package:vortex_app/presentation/screens/products/product_detail_screen.dart';
+import 'package:cartxis_app/core/constants/app_colors.dart';
+import 'package:cartxis_app/data/services/product_service.dart';
+import 'package:cartxis_app/data/services/cart_service.dart';
+import 'package:cartxis_app/data/services/wishlist_service.dart';
+import 'package:cartxis_app/data/models/product_model.dart';
+import 'package:cartxis_app/presentation/screens/products/product_detail_screen.dart';
+import 'package:cartxis_app/presentation/utils/cart_feedback.dart';
 import '../../widgets/skeleton_loader.dart';
 
 class FeaturedProductsScreen extends StatefulWidget {
@@ -118,6 +119,10 @@ class _FeaturedProductsScreenState extends State<FeaturedProductsScreen> {
   Future<void> _addToCart(ProductModel product) async {
     if (_isAddingToCart) return;
 
+    if (!await CartFeedback.ensureLoggedIn(context)) {
+      return;
+    }
+
     setState(() {
       _isAddingToCart = true;
     });
@@ -148,13 +153,7 @@ class _FeaturedProductsScreenState extends State<FeaturedProductsScreen> {
         setState(() {
           _isAddingToCart = false;
         });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to add to cart: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        CartFeedback.showAddError(context, e);
       }
     }
   }

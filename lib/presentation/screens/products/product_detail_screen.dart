@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:vortex_app/core/constants/app_colors.dart';
-import 'package:vortex_app/presentation/widgets/price_text.dart';
+import 'package:cartxis_app/core/constants/app_colors.dart';
+import 'package:cartxis_app/presentation/widgets/price_text.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final Map<String, dynamic> product;

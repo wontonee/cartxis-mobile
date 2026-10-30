@@ -4,6 +4,7 @@ import '../../../data/models/product_model.dart';
 import '../../../data/services/product_service.dart';
 import '../../../data/services/cart_service.dart';
 import '../../../data/services/wishlist_service.dart';
+import '../../utils/cart_feedback.dart';
 import '../../widgets/skeleton_loader.dart';
 import '../../widgets/price_text.dart';
 
@@ -135,6 +136,10 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
   Future<void> _addToCart(ProductModel product) async {
     if (_isAddingToCart) return;
 
+    if (!await CartFeedback.ensureLoggedIn(context)) {
+      return;
+    }
+
     setState(() {
       _isAddingToCart = true;
     });
@@ -185,24 +190,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.white, size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(e.toString().contains('PRODUCT_UNAVAILABLE')
-                      ? 'Product not available'
-                      : 'Failed to add to cart'),
-                ),
-              ],
-            ),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        CartFeedback.showAddError(context, e);
       }
     } finally {
       if (mounted) {

@@ -5,12 +5,12 @@ class AppStrings {
   // App Info
   static const String appName = 'Cartxis';
   static const String appTagline = 'eCommerce';
-    // Update this value to change the displayed app version across the UI.
-    static const String appVersion = '1.0';
+    // Keep in sync with pubspec.yaml / GitHub release (x.y.z, no build number).
+    static const String appVersion = '1.0.1';
   static const String poweredBy = 'Powered by Cartxis API';
 
   // Splash Screen
-  static const String checkingAuth = 'Checking authentication...';
+  static const String checkingAuth = 'Getting things ready…';
 
   // Onboarding
   static const String skip = 'Skip';

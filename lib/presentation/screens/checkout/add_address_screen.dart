@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:vortex_app/core/constants/app_colors.dart';
-import 'package:vortex_app/core/network/api_exception.dart';
-import 'package:vortex_app/data/services/address_service.dart';
+import 'package:cartxis_app/core/constants/app_colors.dart';
+import 'package:cartxis_app/core/network/api_exception.dart';
+import 'package:cartxis_app/data/services/address_service.dart';
 
 class AddAddressScreen extends StatefulWidget {
   final Map<String, dynamic>? address;
@@ -205,14 +205,21 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
       backgroundColor: isDark ? const Color(0xFF0D1B2A) : Colors.grey.shade50,
       appBar: AppBar(
         backgroundColor: isDark ? const Color(0xFF1A2633) : Colors.white,
+        foregroundColor: isDark ? Colors.white : Colors.black87,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: Icon(
+            Icons.arrow_back,
+            color: isDark ? Colors.white : Colors.black87,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           widget.address != null ? 'Edit Address' : 'Add Address',
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : Colors.black87,
+          ),
         ),
       ),
       body: Form(

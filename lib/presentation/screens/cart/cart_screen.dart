@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:vortex_app/core/constants/app_colors.dart';
-import 'package:vortex_app/data/models/cart_model.dart';
-import 'package:vortex_app/data/services/cart_service.dart';
-import 'package:vortex_app/data/services/checkout_service.dart';
-import 'package:vortex_app/presentation/screens/checkout/checkout_screen.dart';
+import 'package:cartxis_app/core/constants/app_colors.dart';
+import 'package:cartxis_app/data/models/cart_model.dart';
+import 'package:cartxis_app/data/services/cart_service.dart';
+import 'package:cartxis_app/data/services/checkout_service.dart';
+import 'package:cartxis_app/presentation/screens/checkout/checkout_screen.dart';
 import '../../widgets/price_text.dart';
 
 class CartScreen extends StatefulWidget {

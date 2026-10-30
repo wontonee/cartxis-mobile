@@ -167,13 +167,16 @@ class _AddressManagementScreenState extends State<AddressManagementScreen> {
                       padding: EdgeInsets.zero,
                     ),
                   ),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Address Management',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
+                        color: isDark
+                            ? Colors.white
+                            : const Color(0xFF1F2937),
                       ),
                     ),
                   ),
