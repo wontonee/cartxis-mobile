@@ -6,7 +6,7 @@ class AppStrings {
   static const String appName = 'Cartxis';
   static const String appTagline = 'eCommerce';
     // Keep in sync with pubspec.yaml / GitHub release (x.y.z, no build number).
-    static const String appVersion = '1.0.1';
+    static const String appVersion = '1.0.2';
   static const String poweredBy = 'Powered by Cartxis API';
 
   // Splash Screen
