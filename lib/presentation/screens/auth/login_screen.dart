@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:vortex_app/core/constants/app_colors.dart';
-import 'package:vortex_app/core/constants/app_sizes.dart';
-import 'package:vortex_app/core/constants/app_strings.dart';
-import 'package:vortex_app/core/theme/text_styles.dart';
-import 'package:vortex_app/data/services/auth_service.dart';
-import 'package:vortex_app/data/services/app_settings_service.dart';
-import 'package:vortex_app/core/network/api_exception.dart';
+import 'package:cartxis_app/core/constants/app_colors.dart';
+import 'package:cartxis_app/core/constants/app_sizes.dart';
+import 'package:cartxis_app/core/constants/app_strings.dart';
+import 'package:cartxis_app/core/theme/text_styles.dart';
+import 'package:cartxis_app/data/services/auth_service.dart';
+import 'package:cartxis_app/data/services/app_settings_service.dart';
+import 'package:cartxis_app/core/network/api_exception.dart';
+import 'package:cartxis_app/presentation/screens/auth/widgets/auth_logo.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -69,8 +70,12 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           );
 
-          // Navigate to home
-          Navigator.of(context).pushReplacementNamed('/home');
+          // Clear splash/onboarding/login under this route so checkout
+          // "Continue Shopping" (popUntil first) cannot resurface Login.
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            '/home',
+            (route) => false,
+          );
         }
       } on ApiException catch (e) {
         if (mounted) {
@@ -198,28 +203,8 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildHeader(bool isDark) {
     return Column(
       children: [
-        // Logo — fetched from /api/v1/app/settings (mobile_auth_logo).
-        // Falls back to assets/transparent_logo.png if admin has not set one.
-        SizedBox(
-          width: 200,
-          height: 200,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
-            child: _logoUrl != null
-                ? Image.network(
-                    _logoUrl!,
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => Image.asset(
-                      'assets/transparent_logo.png',
-                      fit: BoxFit.contain,
-                    ),
-                  )
-                : Image.asset(
-                    'assets/transparent_logo.png',
-                    fit: BoxFit.contain,
-                  ),
-          ),
-        ),
+        // Logo — remote from /api/v1/app/settings, else light/dark local assets.
+        AuthLogo(networkUrl: _logoUrl, width: 220, height: 88),
 
         const SizedBox(height: 24),
 
@@ -266,6 +251,9 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           decoration: InputDecoration(
             hintText: AppStrings.enterEmail,
+            hintStyle: AppTextStyles.body2.copyWith(
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textHint,
+            ),
             prefixIcon: Icon(
               Icons.mail_outline,
               color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
@@ -326,6 +314,9 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           decoration: InputDecoration(
             hintText: AppStrings.enterPassword,
+            hintStyle: AppTextStyles.body2.copyWith(
+              color: isDark ? AppColors.darkTextSecondary : AppColors.textHint,
+            ),
             prefixIcon: Icon(
               Icons.lock_outline,
               color: isDark ? AppColors.darkTextSecondary : AppColors.textSecondary,
@@ -445,7 +436,7 @@ class _LoginScreenState extends State<LoginScreen> {
         onPressed: _isLoading ? null : _onLogin,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
-          foregroundColor: Colors.white,
+          foregroundColor: AppColors.textInverse,
           elevation: 4,
           shadowColor: AppColors.primary.withOpacity(0.3),
           shape: RoundedRectangleBorder(
@@ -459,7 +450,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 width: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.textInverse),
                 ),
               )
             : Text(

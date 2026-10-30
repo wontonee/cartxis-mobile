@@ -5,7 +5,9 @@ class ApiConfig {
   ApiConfig._();
 
   // Environment Configuration
-  static const bool isProduction = true; // Change to true for production
+  // demo.cartxis.com currently 500s all Sanctum routes (TrackApiSync/settings);
+  // use local until that deploy is live. Set true to hit demo again.
+  static const bool isProduction = false;
 
   // Base URLs
   // iOS simulator: resolved via /etc/hosts on Mac → cartxis.test

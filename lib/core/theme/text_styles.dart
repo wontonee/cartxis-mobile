@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:vortex_app/core/constants/app_colors.dart';
+import 'package:cartxis_app/core/constants/app_colors.dart';
 
 /// App text styles based on Inter font family
 class AppTextStyles {

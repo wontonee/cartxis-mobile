@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:vortex_app/core/constants/app_colors.dart';
-import 'package:vortex_app/data/services/address_service.dart';
-import 'package:vortex_app/data/services/checkout_service.dart';
-import 'package:vortex_app/presentation/screens/checkout/add_address_screen.dart';
-import 'package:vortex_app/presentation/screens/checkout/shipping_screen.dart';
-import 'package:vortex_app/presentation/widgets/price_text.dart';
+import 'package:cartxis_app/core/constants/app_colors.dart';
+import 'package:cartxis_app/data/services/address_service.dart';
+import 'package:cartxis_app/data/services/checkout_service.dart';
+import 'package:cartxis_app/presentation/screens/checkout/add_address_screen.dart';
+import 'package:cartxis_app/presentation/screens/checkout/shipping_screen.dart';
+import 'package:cartxis_app/presentation/widgets/price_text.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final Map<String, dynamic> checkoutData;
@@ -210,14 +210,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       backgroundColor: isDark ? const Color(0xFF0D1B2A) : Colors.grey.shade50,
       appBar: AppBar(
         backgroundColor: isDark ? const Color(0xFF1A2633) : Colors.white,
+        foregroundColor: isDark ? Colors.white : Colors.black87,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          icon: Icon(
+            Icons.arrow_back_ios_new,
+            size: 20,
+            color: isDark ? Colors.white : Colors.black87,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Checkout',
-          style: TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : Colors.black87,
+          ),
         ),
       ),
       body: SingleChildScrollView(

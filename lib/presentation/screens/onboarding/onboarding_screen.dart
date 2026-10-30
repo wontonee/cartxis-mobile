@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:vortex_app/core/constants/app_colors.dart';
-import 'package:vortex_app/core/constants/app_sizes.dart';
-import 'package:vortex_app/core/constants/app_strings.dart';
-import 'package:vortex_app/core/theme/text_styles.dart';
+import 'package:cartxis_app/core/constants/app_colors.dart';
+import 'package:cartxis_app/core/constants/app_sizes.dart';
+import 'package:cartxis_app/core/constants/app_strings.dart';
+import 'package:cartxis_app/core/theme/text_styles.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});

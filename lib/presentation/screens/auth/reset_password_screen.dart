@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:vortex_app/core/constants/app_colors.dart';
-import 'package:vortex_app/core/constants/app_sizes.dart';
-import 'package:vortex_app/core/theme/text_styles.dart';
+import 'package:cartxis_app/core/constants/app_colors.dart';
+import 'package:cartxis_app/core/theme/text_styles.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   const ResetPasswordScreen({super.key});
@@ -41,10 +40,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   Color _getStrengthColor() {
-    if (_passwordStrength < 0.33) return Colors.red;
-    if (_passwordStrength < 0.66) return Colors.orange;
-    if (_passwordStrength < 1.0) return Colors.yellow.shade600;
-    return Colors.green;
+    if (_passwordStrength < 0.33) return AppColors.error;
+    if (_passwordStrength < 0.66) return AppColors.warning;
+    if (_passwordStrength < 1.0) return const Color(0xFFFBC02D);
+    return AppColors.success;
   }
 
   String _getStrengthText() {
@@ -54,22 +53,76 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     return 'Strong';
   }
 
+  Color _textPrimary(bool isDark) =>
+      isDark ? AppColors.darkText : AppColors.textPrimary;
+
+  Color _textSecondary(bool isDark) =>
+      isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+
+  InputDecoration _passwordDecoration({
+    required bool isDark,
+    required bool obscure,
+    required VoidCallback onToggle,
+  }) {
+    return InputDecoration(
+      hintText: '••••••••',
+      hintStyle: AppTextStyles.body2.copyWith(
+        color: isDark ? AppColors.darkTextSecondary : AppColors.textHint,
+      ),
+      suffixIcon: IconButton(
+        icon: Icon(
+          obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+          size: 20,
+          color: _textSecondary(isDark),
+        ),
+        onPressed: onToggle,
+      ),
+      filled: true,
+      fillColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        ),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(
+          color: AppColors.primary,
+          width: 2,
+        ),
+      ),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 16,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final fieldStyle = AppTextStyles.body1.copyWith(color: _textPrimary(isDark));
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor:
+          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
       body: SafeArea(
         child: Column(
           children: [
-            // Navigation Bar
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: isDark 
-                    ? AppColors.backgroundDark.withOpacity(0.95)
-                    : AppColors.backgroundLight.withOpacity(0.95),
+                color: (isDark
+                        ? AppColors.backgroundDark
+                        : AppColors.backgroundLight)
+                    .withOpacity(0.95),
               ),
               child: Row(
                 children: [
@@ -80,35 +133,35 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       height: 40,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: isDark 
-                            ? Colors.grey.shade800
-                            : Colors.grey.shade200,
+                        color: isDark
+                            ? AppColors.surfaceDark
+                            : AppColors.borderLight.withOpacity(0.6),
                       ),
                       child: Center(
                         child: Icon(
                           Icons.arrow_back_ios_new,
                           size: 20,
-                          color: isDark ? Colors.white : Colors.grey.shade900,
+                          color: _textPrimary(isDark),
                         ),
                       ),
                     ),
                   ),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Reset Password',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
+                        color: _textPrimary(isDark),
                       ),
                       textAlign: TextAlign.center,
                     ),
                   ),
-                  const SizedBox(width: 40), // Balance the layout
+                  const SizedBox(width: 40),
                 ],
               ),
             ),
 
-            // Scrollable Content
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24),
@@ -119,38 +172,31 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     children: [
                       const SizedBox(height: 8),
 
-                      // Headline
                       Text(
                         'Create new password',
                         style: AppTextStyles.headline1.copyWith(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.grey.shade900,
+                          color: _textPrimary(isDark),
                         ),
                       ),
                       const SizedBox(height: 8),
 
-                      // Description
                       Text(
                         'Your new password must be different from previous used passwords.',
                         style: AppTextStyles.body2.copyWith(
-                          color: isDark 
-                              ? Colors.grey.shade400
-                              : Colors.grey.shade500,
+                          color: _textSecondary(isDark),
                           height: 1.5,
                         ),
                       ),
                       const SizedBox(height: 32),
 
-                      // New Password Field
                       Text(
                         'New Password',
                         style: AppTextStyles.body2.copyWith(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
-                          color: isDark 
-                              ? Colors.grey.shade300
-                              : Colors.grey.shade700,
+                          color: _textPrimary(isDark),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -158,54 +204,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         controller: _newPasswordController,
                         obscureText: _obscureNewPassword,
                         onChanged: _calculatePasswordStrength,
-                        decoration: InputDecoration(
-                          hintText: '••••••••',
-                          hintStyle: TextStyle(color: Colors.grey.shade400),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureNewPassword
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                              size: 20,
-                              color: Colors.grey.shade400,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscureNewPassword = !_obscureNewPassword;
-                              });
-                            },
-                          ),
-                          filled: true,
-                          fillColor: isDark 
-                              ? Colors.grey.shade800
-                              : Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: isDark 
-                                  ? Colors.grey.shade700
-                                  : Colors.grey.shade200,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: isDark 
-                                  ? Colors.grey.shade700
-                                  : Colors.grey.shade200,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: AppColors.primary,
-                              width: 2,
-                            ),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 16,
-                          ),
+                        style: fieldStyle,
+                        decoration: _passwordDecoration(
+                          isDark: isDark,
+                          obscure: _obscureNewPassword,
+                          onToggle: () {
+                            setState(() {
+                              _obscureNewPassword = !_obscureNewPassword;
+                            });
+                          },
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -219,7 +226,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       ),
                       const SizedBox(height: 12),
 
-                      // Password Strength Section
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -228,9 +234,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
-                              color: isDark 
-                                  ? Colors.grey.shade400
-                                  : Colors.grey.shade500,
+                              color: _textSecondary(isDark),
                             ),
                           ),
                           Text(
@@ -245,7 +249,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       ),
                       const SizedBox(height: 8),
 
-                      // Segmented Progress Bar
                       Row(
                         children: [
                           for (int i = 0; i < 4; i++) ...[
@@ -255,18 +258,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(3),
                                   color: i < (_passwordStrength * 4).round()
-                                      ? (i == 0 || i == 1 
-                                          ? AppColors.primary 
-                                          : (i == 2 
-                                              ? (isDark 
-                                                  ? Colors.yellow.shade600.withOpacity(0.3)
-                                                  : Colors.yellow.shade600.withOpacity(0.5))
-                                              : (isDark 
-                                                  ? Colors.grey.shade700
-                                                  : Colors.grey.shade200)))
-                                      : (isDark 
-                                          ? Colors.grey.shade700
-                                          : Colors.grey.shade200),
+                                      ? _getStrengthColor()
+                                      : (isDark
+                                          ? AppColors.borderDark
+                                          : AppColors.borderLight),
                                 ),
                               ),
                             ),
@@ -279,76 +274,33 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         'Must contain at least 8 characters, 1 number, and 1 symbol.',
                         style: TextStyle(
                           fontSize: 12,
-                          color: isDark 
-                              ? Colors.grey.shade500
-                              : Colors.grey.shade400,
+                          color: _textSecondary(isDark),
                         ),
                       ),
                       const SizedBox(height: 24),
 
-                      // Confirm Password Field
                       Text(
                         'Confirm Password',
                         style: AppTextStyles.body2.copyWith(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
-                          color: isDark 
-                              ? Colors.grey.shade300
-                              : Colors.grey.shade700,
+                          color: _textPrimary(isDark),
                         ),
                       ),
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _confirmPasswordController,
                         obscureText: _obscureConfirmPassword,
-                        decoration: InputDecoration(
-                          hintText: '••••••••',
-                          hintStyle: TextStyle(color: Colors.grey.shade400),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureConfirmPassword
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                              size: 20,
-                              color: Colors.grey.shade400,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _obscureConfirmPassword = !_obscureConfirmPassword;
-                              });
-                            },
-                          ),
-                          filled: true,
-                          fillColor: isDark 
-                              ? Colors.grey.shade800
-                              : Colors.white,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: isDark 
-                                  ? Colors.grey.shade700
-                                  : Colors.grey.shade200,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(
-                              color: isDark 
-                                  ? Colors.grey.shade700
-                                  : Colors.grey.shade200,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: AppColors.primary,
-                              width: 2,
-                            ),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 16,
-                          ),
+                        style: fieldStyle,
+                        decoration: _passwordDecoration(
+                          isDark: isDark,
+                          obscure: _obscureConfirmPassword,
+                          onToggle: () {
+                            setState(() {
+                              _obscureConfirmPassword =
+                                  !_obscureConfirmPassword;
+                            });
+                          },
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
@@ -367,7 +319,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               ),
             ),
 
-            // Bottom Button
             Padding(
               padding: const EdgeInsets.all(24),
               child: SizedBox(
@@ -377,16 +328,15 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
                       // TODO: Handle password reset
-                      // Show success and navigate to login
                     }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
+                    foregroundColor: AppColors.textInverse,
                     elevation: 8,
-                    shadowColor: isDark 
+                    shadowColor: isDark
                         ? Colors.transparent
-                        : Colors.blue.shade500.withOpacity(0.2),
+                        : AppColors.primary.withOpacity(0.2),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),

@@ -47,3 +47,8 @@ android/app/cartxis-release.jks
 
 # Sensitive credentials folder
 important/
+
+# Local Cursor agents / skills / rules (not for public OSS consumers)
+.cursor/
+AGENTS.md
+firepit-log.txt

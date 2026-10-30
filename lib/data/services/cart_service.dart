@@ -19,20 +19,22 @@ class CartService {
     required int productId,
     int quantity = 1,
   }) async {
-    try {
-      
-      final response = await _apiClient.post(
-        '/api/v1/cart/add',
-        body: {
-          'product_id': productId,
-          'quantity': quantity,
-        },
-      );
+    final response = await _apiClient.post(
+      '/api/v1/cart/add',
+      body: {
+        'product_id': productId,
+        'quantity': quantity,
+      },
+    );
 
-      return response['success'] == true;
-    } catch (e) {
-      rethrow;
+    if (response['success'] == true) {
+      return true;
     }
+
+    throw ApiException(
+      message: response['message']?.toString() ?? 'Failed to add to cart',
+      code: response['error_code']?.toString() ?? 'CART_ADD_FAILED',
+    );
   }
 
   /// Get cart items

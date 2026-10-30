@@ -10,7 +10,7 @@ class AppStrings {
   static const String poweredBy = 'Powered by Cartxis API';
 
   // Splash Screen
-  static const String checkingAuth = 'Checking authentication...';
+  static const String checkingAuth = 'Getting things ready…';
 
   // Onboarding
   static const String skip = 'Skip';

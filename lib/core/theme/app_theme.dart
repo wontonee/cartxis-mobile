@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:vortex_app/core/constants/app_colors.dart';
-import 'package:vortex_app/core/constants/app_sizes.dart';
-import 'package:vortex_app/core/theme/text_styles.dart';
+import 'package:cartxis_app/core/constants/app_colors.dart';
+import 'package:cartxis_app/core/constants/app_sizes.dart';
+import 'package:cartxis_app/core/theme/text_styles.dart';
 
 /// App theme configuration
 class AppTheme {
@@ -189,13 +189,16 @@ class AppTheme {
       ),
 
       // App Bar Theme
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: AppColors.surfaceDark,
         foregroundColor: AppColors.darkText,
         elevation: AppSizes.elevationLarge,
         centerTitle: true,
         systemOverlayStyle: SystemUiOverlayStyle.light,
-        titleTextStyle: AppTextStyles.headline5,
+        // headline5 hardcodes light-theme textPrimary; override for dark AppBars
+        titleTextStyle: AppTextStyles.headline5.copyWith(
+          color: AppColors.darkText,
+        ),
       ),
 
       // Text Theme

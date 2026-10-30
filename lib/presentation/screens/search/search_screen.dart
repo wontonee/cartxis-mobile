@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'package:vortex_app/core/constants/app_colors.dart';
-import 'package:vortex_app/data/models/category_model.dart';
-import 'package:vortex_app/data/models/product_model.dart';
-import 'package:vortex_app/data/services/category_service.dart';
-import 'package:vortex_app/data/services/search_service.dart';
-import 'package:vortex_app/data/services/cart_service.dart';
+import 'package:cartxis_app/core/constants/app_colors.dart';
+import 'package:cartxis_app/data/models/category_model.dart';
+import 'package:cartxis_app/data/models/product_model.dart';
+import 'package:cartxis_app/data/services/category_service.dart';
+import 'package:cartxis_app/data/services/search_service.dart';
+import 'package:cartxis_app/data/services/cart_service.dart';
+import 'package:cartxis_app/presentation/utils/cart_feedback.dart';
 import '../../widgets/skeleton_loader.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -155,6 +156,10 @@ class _SearchScreenState extends State<SearchScreen> {
       return;
     }
 
+    if (!await CartFeedback.ensureLoggedIn(context)) {
+      return;
+    }
+
     setState(() {
       _isAddingToCart = true;
     });
@@ -206,24 +211,7 @@ class _SearchScreenState extends State<SearchScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.error_outline, color: Colors.white, size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(e.toString().contains('PRODUCT_UNAVAILABLE')
-                      ? 'Product not available'
-                      : 'Failed to add to cart'),
-                ),
-              ],
-            ),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        CartFeedback.showAddError(context, e);
       }
     } finally {
       // Always reset the flag after operation completes

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:vortex_app/core/constants/app_colors.dart';
-import 'package:vortex_app/data/services/order_service.dart';
-import 'package:vortex_app/presentation/widgets/price_text.dart';
+import 'package:cartxis_app/core/constants/app_colors.dart';
+import 'package:cartxis_app/data/services/order_service.dart';
+import 'package:cartxis_app/presentation/widgets/price_text.dart';
 import 'package:intl/intl.dart';
 
 class OrderListScreen extends StatefulWidget {
@@ -243,7 +243,12 @@ class _OrderListScreenState extends State<OrderListScreen>
                   children: [
                     IconButton(
                       onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.arrow_back),
+                      icon: Icon(
+                        Icons.arrow_back,
+                        color: isDark
+                            ? Colors.white
+                            : const Color(0xFF0F172A),
+                      ),
                       padding: EdgeInsets.zero,
                       constraints:
                           const BoxConstraints(minWidth: 40, minHeight: 40),
@@ -253,13 +258,16 @@ class _OrderListScreenState extends State<OrderListScreen>
                             : Colors.transparent,
                       ),
                     ),
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'My Orders',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
+                          color: isDark
+                              ? Colors.white
+                              : const Color(0xFF0F172A),
                         ),
                       ),
                     ),
@@ -269,7 +277,12 @@ class _OrderListScreenState extends State<OrderListScreen>
                         _tabController.index,
                         refresh: true,
                       ),
-                      icon: const Icon(Icons.refresh),
+                      icon: Icon(
+                        Icons.refresh,
+                        color: isDark
+                            ? Colors.white
+                            : const Color(0xFF0F172A),
+                      ),
                       padding: EdgeInsets.zero,
                       constraints:
                           const BoxConstraints(minWidth: 40, minHeight: 40),

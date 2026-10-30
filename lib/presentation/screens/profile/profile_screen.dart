@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:vortex_app/core/constants/app_colors.dart';
-import 'package:vortex_app/core/constants/app_strings.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:vortex_app/data/services/auth_service.dart';
-import 'package:vortex_app/data/models/user_model.dart';
-import 'package:vortex_app/core/network/api_exception.dart';
+import 'package:cartxis_app/core/constants/app_colors.dart';
+import 'package:cartxis_app/core/constants/app_strings.dart';
+import 'package:cartxis_app/core/theme/theme_controller.dart';
+import 'package:cartxis_app/data/services/auth_service.dart';
+import 'package:cartxis_app/data/models/user_model.dart';
+import 'package:cartxis_app/core/network/api_exception.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -14,16 +14,26 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  bool _isDarkMode = false;
   final _authService = AuthService();
+  final _themeController = ThemeController.instance;
   UserModel? _user;
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadDarkModePreference();
+    _themeController.addListener(_onThemeChanged);
     _loadUserProfile();
+  }
+
+  @override
+  void dispose() {
+    _themeController.removeListener(_onThemeChanged);
+    super.dispose();
+  }
+
+  void _onThemeChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadUserProfile() async {
@@ -60,28 +70,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }
     }
-  }
-
-  Future<void> _loadDarkModePreference() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _isDarkMode = prefs.getBool('isDarkMode') ?? false;
-    });
-  }
-
-  Future<void> _toggleDarkMode(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('isDarkMode', value);
-    setState(() {
-      _isDarkMode = value;
-    });
-    // In a real app, this would trigger a theme change
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Dark mode ${value ? 'enabled' : 'disabled'}. Restart app to apply.'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
   }
 
   Future<void> _deleteAccount() async {
@@ -335,6 +323,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                         const SizedBox(height: 16),
 
+                        // Preferences Section
+                        _buildSectionHeader('PREFERENCES', isDark),
+                        _buildThemeSelector(isDark),
+
+                        const SizedBox(height: 16),
+
                         // Support Section
                         _buildSectionHeader('SUPPORT', isDark),
                         _buildMenuItem(
@@ -448,6 +442,131 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         );
       }
+
+  Widget _buildThemeSelector(bool isDark) {
+    final selected = _themeController.themeMode;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 4, 24, 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.brightness_6_outlined,
+                  color: AppColors.primary,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  'Appearance',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+              ),
+            ),
+            child: Row(
+              children: [
+                _themeChip(
+                  label: 'Light',
+                  icon: Icons.light_mode_outlined,
+                  mode: ThemeMode.light,
+                  selected: selected,
+                  isDark: isDark,
+                ),
+                _themeChip(
+                  label: 'Dark',
+                  icon: Icons.dark_mode_outlined,
+                  mode: ThemeMode.dark,
+                  selected: selected,
+                  isDark: isDark,
+                ),
+                _themeChip(
+                  label: 'System',
+                  icon: Icons.settings_suggest_outlined,
+                  mode: ThemeMode.system,
+                  selected: selected,
+                  isDark: isDark,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _themeChip({
+    required String label,
+    required IconData icon,
+    required ThemeMode mode,
+    required ThemeMode selected,
+    required bool isDark,
+  }) {
+    final isSelected = selected == mode;
+    return Expanded(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _themeController.setThemeMode(mode),
+          borderRadius: BorderRadius.circular(10),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+              color: isSelected ? AppColors.primary : Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  icon,
+                  size: 18,
+                  color: isSelected
+                      ? Colors.white
+                      : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    color: isSelected
+                        ? Colors.white
+                        : (isDark ? Colors.grey.shade300 : const Color(0xFF0F172A)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _buildSectionHeader(String title, bool isDark) {
     return Padding(

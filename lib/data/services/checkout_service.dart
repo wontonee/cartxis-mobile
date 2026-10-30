@@ -1,4 +1,4 @@
-import 'package:vortex_app/core/network/api_client.dart';
+import 'package:cartxis_app/core/network/api_client.dart';
 
 class CheckoutService {
   final ApiClient _apiClient = ApiClient();

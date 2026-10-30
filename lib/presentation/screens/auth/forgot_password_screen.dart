@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:vortex_app/core/constants/app_colors.dart';
-import 'package:vortex_app/core/constants/app_sizes.dart';
-import 'package:vortex_app/core/theme/text_styles.dart';
+import 'package:cartxis_app/core/constants/app_colors.dart';
+import 'package:cartxis_app/core/theme/text_styles.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -20,16 +19,22 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     super.dispose();
   }
 
+  Color _textPrimary(bool isDark) =>
+      isDark ? AppColors.darkText : AppColors.textPrimary;
+
+  Color _textSecondary(bool isDark) =>
+      isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
+      backgroundColor:
+          isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
       body: SafeArea(
         child: Column(
           children: [
-            // App Bar
             Padding(
               padding: const EdgeInsets.all(16),
               child: Row(
@@ -42,15 +47,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       height: 40,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: isDark 
-                            ? Colors.grey.shade800
-                            : Colors.grey.shade200,
+                        color: isDark
+                            ? AppColors.surfaceDark
+                            : AppColors.borderLight.withOpacity(0.6),
                       ),
                       child: Center(
                         child: Icon(
                           Icons.arrow_back_ios_new,
                           size: 20,
-                          color: isDark ? Colors.white : Colors.grey.shade900,
+                          color: _textPrimary(isDark),
                         ),
                       ),
                     ),
@@ -59,7 +64,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               ),
             ),
 
-            // Scrollable Content
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -67,7 +71,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   children: [
                     const SizedBox(height: 32),
 
-                    // Hero Icon
                     Container(
                       width: 96,
                       height: 96,
@@ -83,27 +86,23 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     ),
                     const SizedBox(height: 32),
 
-                    // Headline
                     Text(
                       'Forgot Password?',
                       style: AppTextStyles.headline1.copyWith(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.grey.shade900,
+                        color: _textPrimary(isDark),
                       ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 12),
 
-                    // Description
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       child: Text(
                         "Don't worry! It happens. Please enter the email address associated with your account.",
                         style: AppTextStyles.body1.copyWith(
-                          color: isDark 
-                              ? Colors.grey.shade400
-                              : Colors.grey.shade600,
+                          color: _textSecondary(isDark),
                           height: 1.5,
                         ),
                         textAlign: TextAlign.center,
@@ -111,53 +110,57 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     ),
                     const SizedBox(height: 40),
 
-                    // Form
                     Form(
                       key: _formKey,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Email Label
                           Text(
                             'Email Address',
                             style: AppTextStyles.body2.copyWith(
                               fontWeight: FontWeight.w600,
                               fontSize: 14,
-                              color: isDark ? Colors.white : Colors.grey.shade900,
+                              color: _textPrimary(isDark),
                             ),
                           ),
                           const SizedBox(height: 8),
 
-                          // Email Field
                           TextFormField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
+                            style: AppTextStyles.body1.copyWith(
+                              color: _textPrimary(isDark),
+                            ),
                             decoration: InputDecoration(
                               hintText: 'example@email.com',
-                              hintStyle: TextStyle(color: Colors.grey.shade400),
+                              hintStyle: AppTextStyles.body2.copyWith(
+                                color: isDark
+                                    ? AppColors.darkTextSecondary
+                                    : AppColors.textHint,
+                              ),
                               prefixIcon: Icon(
                                 Icons.mail_outline,
                                 size: 20,
-                                color: Colors.grey.shade400,
+                                color: _textSecondary(isDark),
                               ),
                               filled: true,
-                              fillColor: isDark 
-                                  ? Colors.grey.shade800
-                                  : Colors.white,
+                              fillColor: isDark
+                                  ? AppColors.surfaceDark
+                                  : AppColors.surfaceLight,
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(
-                                  color: isDark 
-                                      ? Colors.grey.shade700
-                                      : Colors.grey.shade300,
+                                  color: isDark
+                                      ? AppColors.borderDark
+                                      : AppColors.borderLight,
                                 ),
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide(
-                                  color: isDark 
-                                      ? Colors.grey.shade700
-                                      : Colors.grey.shade300,
+                                  color: isDark
+                                      ? AppColors.borderDark
+                                      : AppColors.borderLight,
                                 ),
                               ),
                               focusedBorder: OutlineInputBorder(
@@ -184,7 +187,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           ),
                           const SizedBox(height: 24),
 
-                          // Send Reset Link Button
                           SizedBox(
                             width: double.infinity,
                             height: 48,
@@ -192,16 +194,15 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                               onPressed: () {
                                 if (_formKey.currentState!.validate()) {
                                   // TODO: Navigate to reset password screen
-                                  // Navigator.of(context).pushReplacementNamed('/reset-password');
                                 }
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primary,
-                                foregroundColor: Colors.white,
+                                foregroundColor: AppColors.textInverse,
                                 elevation: 2,
-                                shadowColor: isDark 
+                                shadowColor: isDark
                                     ? Colors.transparent
-                                    : Colors.blue.shade200,
+                                    : AppColors.primary.withOpacity(0.25),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -223,7 +224,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               ),
             ),
 
-            // Footer
             Padding(
               padding: const EdgeInsets.all(24),
               child: Center(
@@ -232,9 +232,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     text: 'Remember Password? ',
                     style: TextStyle(
                       fontSize: 14,
-                      color: isDark 
-                          ? Colors.grey.shade400
-                          : Colors.grey.shade500,
+                      color: _textSecondary(isDark),
                     ),
                     children: [
                       WidgetSpan(

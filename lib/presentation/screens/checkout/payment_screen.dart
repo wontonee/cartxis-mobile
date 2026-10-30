@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:vortex_app/core/constants/app_colors.dart';
-import 'package:vortex_app/data/services/checkout_service.dart';
-import 'package:vortex_app/presentation/screens/checkout/review_screen.dart';
-import 'package:vortex_app/presentation/widgets/price_text.dart';
+import 'package:cartxis_app/core/constants/app_colors.dart';
+import 'package:cartxis_app/data/services/checkout_service.dart';
+import 'package:cartxis_app/presentation/screens/checkout/review_screen.dart';
+import 'package:cartxis_app/presentation/widgets/price_text.dart';
 
 class PaymentScreen extends StatefulWidget {
   final List<dynamic> paymentMethods;
@@ -83,18 +83,24 @@ class _PaymentScreenState extends State<PaymentScreen> {
               SliverAppBar(
                 pinned: true,
                 elevation: 0,
-                backgroundColor: isDark 
-                    ? const Color(0xFF101922).withOpacity(0.95) 
+                backgroundColor: isDark
+                    ? const Color(0xFF101922).withOpacity(0.95)
                     : const Color(0xFFF6F7F8).withOpacity(0.95),
+                foregroundColor:
+                    isDark ? Colors.white : const Color(0xFF0F172A),
+                iconTheme: IconThemeData(
+                  color: isDark ? Colors.white : const Color(0xFF0F172A),
+                ),
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back_ios_new, size: 20),
                   onPressed: () => Navigator.pop(context),
                 ),
-                title: const Text(
+                title: Text(
                   'Payment Method',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
                   ),
                 ),
                 centerTitle: true,

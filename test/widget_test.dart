@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:vortex_app/app.dart';
+import 'package:cartxis_app/app.dart';
 
 void main() {
   testWidgets('App builds', (WidgetTester tester) async {

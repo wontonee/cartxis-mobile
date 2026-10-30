@@ -46,7 +46,7 @@ Expected response from `GET /api/v1/currency/default`:
 ### 1. Using CurrencyUtils (Recommended for Services/Logic)
 
 ```dart
-import 'package:vortex_app/core/utils/currency_utils.dart';
+import 'package:cartxis_app/core/utils/currency_utils.dart';
 
 // Format an amount
 String formatted = await CurrencyUtils.format(1234.56);
@@ -70,7 +70,7 @@ String formatted = CurrencyUtils.formatSync(1234.56);
 ### 2. Using PriceText Widget (Recommended for UI)
 
 ```dart
-import 'package:vortex_app/presentation/widgets/price_text.dart';
+import 'package:cartxis_app/presentation/widgets/price_text.dart';
 
 // Basic usage
 PriceText(amount: 1234.56)
@@ -97,7 +97,7 @@ StyledPriceText(
 ### 3. Using DiscountedPriceText Widget
 
 ```dart
-import 'package:vortex_app/presentation/widgets/price_text.dart';
+import 'package:cartxis_app/presentation/widgets/price_text.dart';
 
 // Display original and discounted prices
 DiscountedPriceText(
@@ -111,7 +111,7 @@ DiscountedPriceText(
 ### 4. Using CurrencySymbol Widget
 
 ```dart
-import 'package:vortex_app/presentation/widgets/price_text.dart';
+import 'package:cartxis_app/presentation/widgets/price_text.dart';
 
 // Display just the currency symbol
 CurrencySymbol(

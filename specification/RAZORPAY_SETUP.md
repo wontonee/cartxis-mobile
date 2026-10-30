@@ -58,7 +58,7 @@ cd ..
 Open `lib/main.dart` and add the route:
 
 ```dart
-import 'package:vortex_app/presentation/screens/payment/razorpay_test_screen.dart';
+import 'package:cartxis_app/presentation/screens/payment/razorpay_test_screen.dart';
 
 // In your MaterialApp routes:
 routes: {

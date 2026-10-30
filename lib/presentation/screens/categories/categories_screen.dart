@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:vortex_app/core/constants/app_colors.dart';
-import 'package:vortex_app/data/models/category_model.dart';
-import 'package:vortex_app/data/services/category_service.dart';
+import 'package:cartxis_app/core/constants/app_colors.dart';
+import 'package:cartxis_app/data/models/category_model.dart';
+import 'package:cartxis_app/data/services/category_service.dart';
 import '../../widgets/skeleton_loader.dart';
 
 class CategoriesScreen extends StatefulWidget {
@@ -132,12 +132,13 @@ class _CategoriesScreenState extends State<CategoriesScreen> with AutomaticKeepA
             Container(
               height: 56,
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: const Center(
+              child: Center(
                 child: Text(
                   'Categories',
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : Colors.grey.shade900,
                   ),
                 ),
               ),
