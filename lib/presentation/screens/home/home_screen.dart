@@ -9,6 +9,7 @@ import 'package:cartxis_app/data/models/product_model.dart';
 import 'package:cartxis_app/data/models/category_model.dart';
 import 'package:cartxis_app/data/models/banner_model.dart';
 import 'package:cartxis_app/presentation/utils/cart_feedback.dart';
+import 'package:cartxis_app/presentation/screens/products/product_detail_screen.dart';
 import '../../widgets/price_text.dart';
 import '../../widgets/skeleton_loader.dart';
 
@@ -39,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoadingSale = true;
   bool _isLoadingCategories = true;
   bool _isLoadingBanners = true;
-  bool _isAddingToCart = false; // Prevent duplicate add to cart calls
+  int? _addingToCartProductId; // Only the tapped product's + button spins
   
   int? _selectedCategoryId; // null means 'All'
 
@@ -196,9 +197,19 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  void _openProductDetail(ProductModel product) {
+    // Use MaterialPageRoute — nested home Navigator only knows
+    // /featured-products, /flash-sales, /new-arrivals (not /product-detail).
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ProductDetailScreen(product: product.toJson()),
+      ),
+    );
+  }
+
   Future<void> _addToCart(ProductModel product) async {
-    // Prevent duplicate calls
-    if (_isAddingToCart) {
+    if (_addingToCartProductId != null) {
       return;
     }
 
@@ -207,11 +218,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     setState(() {
-      _isAddingToCart = true;
+      _addingToCartProductId = product.id;
     });
 
     try {
-      // Show loading indicator
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Row(
@@ -262,10 +272,9 @@ class _HomeScreenState extends State<HomeScreen> {
         CartFeedback.showAddError(context, e);
       }
     } finally {
-      // Always reset the flag after operation completes
       if (mounted) {
         setState(() {
-          _isAddingToCart = false;
+          _addingToCartProductId = null;
         });
       }
     }
@@ -1063,6 +1072,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           product.name,
                           product.finalPrice,
                           isDark,
+                          product,
                         );
                       },
                     ),
@@ -1082,7 +1092,11 @@ class _HomeScreenState extends State<HomeScreen> {
     double? originalPrice,
     ProductModel? product,
   }) {
-    return Container(
+    final isAdding =
+        product != null && _addingToCartProductId == product.id;
+    return GestureDetector(
+      onTap: product == null ? null : () => _openProductDetail(product),
+      child: Container(
       width: 160,
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1A2633) : Colors.white,
@@ -1222,20 +1236,22 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                     InkWell(
-                      onTap: _isAddingToCart || product == null 
-                          ? null 
+                      onTap: isAdding ||
+                              _addingToCartProductId != null ||
+                              product == null
+                          ? null
                           : () => _addToCart(product),
                       borderRadius: BorderRadius.circular(13),
                       child: Container(
                         width: 26,
                         height: 26,
                         decoration: BoxDecoration(
-                          color: _isAddingToCart 
+                          color: isAdding
                               ? AppColors.primary.withOpacity(0.5)
                               : AppColors.primary,
                           shape: BoxShape.circle,
                         ),
-                        child: _isAddingToCart
+                        child: isAdding
                             ? const SizedBox(
                                 width: 12,
                                 height: 12,
@@ -1258,6 +1274,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 
@@ -1270,7 +1287,11 @@ class _HomeScreenState extends State<HomeScreen> {
     bool isDark,
     ProductModel? product,
   ) {
-    return Container(
+    final isAdding =
+        product != null && _addingToCartProductId == product.id;
+    return GestureDetector(
+      onTap: product == null ? null : () => _openProductDetail(product),
+      child: Container(
       width: 160,
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1A2633) : Colors.white,
@@ -1393,20 +1414,22 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       InkWell(
-                        onTap: _isAddingToCart || product == null 
-                            ? null 
+                        onTap: isAdding ||
+                                _addingToCartProductId != null ||
+                                product == null
+                            ? null
                             : () => _addToCart(product),
                         borderRadius: BorderRadius.circular(13),
                         child: Container(
                           width: 26,
                           height: 26,
                           decoration: BoxDecoration(
-                            color: _isAddingToCart 
+                            color: isAdding
                                 ? AppColors.primary.withOpacity(0.5)
                                 : AppColors.primary,
                             shape: BoxShape.circle,
                           ),
-                          child: _isAddingToCart
+                          child: isAdding
                               ? const SizedBox(
                                   width: 12,
                                   height: 12,
@@ -1430,6 +1453,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 
@@ -1438,8 +1462,13 @@ class _HomeScreenState extends State<HomeScreen> {
     String name,
     double price,
     bool isDark,
+    ProductModel? product,
   ) {
-    return Container(
+    final isAdding =
+        product != null && _addingToCartProductId == product.id;
+    return GestureDetector(
+      onTap: product == null ? null : () => _openProductDetail(product),
+      child: Container(
       width: 160,
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1A2633) : Colors.white,
@@ -1523,17 +1552,36 @@ class _HomeScreenState extends State<HomeScreen> {
                       fontWeight: FontWeight.bold,
                       color: AppColors.primary,
                     ),
-                    Container(
-                      width: 26,
-                      height: 26,
-                      decoration: const BoxDecoration(
-                        color: AppColors.primary,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.add,
-                        size: 16,
-                        color: Colors.white,
+                    InkWell(
+                      onTap: isAdding ||
+                              _addingToCartProductId != null ||
+                              product == null
+                          ? null
+                          : () => _addToCart(product),
+                      borderRadius: BorderRadius.circular(13),
+                      child: Container(
+                        width: 26,
+                        height: 26,
+                        decoration: BoxDecoration(
+                          color: isAdding
+                              ? AppColors.primary.withOpacity(0.5)
+                              : AppColors.primary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: isAdding
+                            ? const SizedBox(
+                                width: 12,
+                                height: 12,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.add,
+                                size: 16,
+                                color: Colors.white,
+                              ),
                       ),
                     ),
                   ],
@@ -1543,6 +1591,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 }
