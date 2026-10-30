@@ -25,7 +25,7 @@ class _NewArrivalsScreenState extends State<NewArrivalsScreen> {
   bool _isLoadingInitial = true;
   bool _isLoadingMore = false;
   bool _hasMore = true;
-  bool _isAddingToCart = false;
+  int? _addingToCartProductId;
   
   int _currentPage = 1;
   final int _perPage = 20;
@@ -119,7 +119,7 @@ class _NewArrivalsScreenState extends State<NewArrivalsScreen> {
   }
 
   Future<void> _addToCart(ProductModel product) async {
-    if (_isAddingToCart) return;
+    if (_addingToCartProductId != null) return;
 
     if (!await CartFeedback.ensureLoggedIn(context)) {
       return;
@@ -127,7 +127,7 @@ class _NewArrivalsScreenState extends State<NewArrivalsScreen> {
 
     try {
       setState(() {
-        _isAddingToCart = true;
+        _addingToCartProductId = product.id;
       });
 
       await _cartService.addToCart(
@@ -137,7 +137,7 @@ class _NewArrivalsScreenState extends State<NewArrivalsScreen> {
 
       if (mounted) {
         setState(() {
-          _isAddingToCart = false;
+          _addingToCartProductId = null;
         });
 
         widget.onCartChanged?.call();
@@ -153,7 +153,7 @@ class _NewArrivalsScreenState extends State<NewArrivalsScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _isAddingToCart = false;
+          _addingToCartProductId = null;
         });
         CartFeedback.showAddError(context, e);
       }
@@ -427,18 +427,20 @@ class _NewArrivalsScreenState extends State<NewArrivalsScreen> {
                         ),
                       ),
                       InkWell(
-                        onTap: _isAddingToCart ? null : () => _addToCart(product),
+                        onTap: _addingToCartProductId != null
+                            ? null
+                            : () => _addToCart(product),
                         borderRadius: BorderRadius.circular(13),
                         child: Container(
                           width: 26,
                           height: 26,
                           decoration: BoxDecoration(
-                            color: _isAddingToCart 
+                            color: _addingToCartProductId == product.id
                                 ? AppColors.primary.withOpacity(0.5)
                                 : AppColors.primary,
                             shape: BoxShape.circle,
                           ),
-                          child: _isAddingToCart
+                          child: _addingToCartProductId == product.id
                               ? const SizedBox(
                                   width: 12,
                                   height: 12,

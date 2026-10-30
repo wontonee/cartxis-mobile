@@ -71,30 +71,46 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.paddingOf(context).bottom;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final canvas = isDark ? AppColors.backgroundDark : AppColors.backgroundLight;
+    final taglineColor = isDark
+        ? AppColors.darkTextSecondary.withValues(alpha: 0.95)
+        : AppColors.textSecondary.withValues(alpha: 0.9);
+    final versionColor = isDark
+        ? AppColors.darkTextSecondary.withValues(alpha: 0.7)
+        : AppColors.textHint.withValues(alpha: 0.85);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.dark.copyWith(
+      value: (isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark)
+          .copyWith(
         statusBarColor: Colors.transparent,
-        systemNavigationBarColor: AppColors.backgroundLight,
-        systemNavigationBarIconBrightness: Brightness.dark,
+        systemNavigationBarColor: canvas,
+        systemNavigationBarIconBrightness:
+            isDark ? Brightness.light : Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: AppColors.backgroundLight,
+        backgroundColor: canvas,
         body: Stack(
           fit: StackFit.expand,
           children: [
-            // Soft brand atmosphere — light canvas, not a heavy blue wash.
-            const DecoratedBox(
+            // Match ThemeMode (incl. system dark) so AuthLogo asset stays visible.
+            DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xFFFFFFFF),
-                    AppColors.backgroundLight,
-                    Color(0xFFEAF4FF),
-                  ],
-                  stops: [0.0, 0.55, 1.0],
+                  colors: isDark
+                      ? const [
+                          Color(0xFF0C1219),
+                          AppColors.backgroundDark,
+                          Color(0xFF0A1624),
+                        ]
+                      : const [
+                          Color(0xFFFFFFFF),
+                          AppColors.backgroundLight,
+                          Color(0xFFEAF4FF),
+                        ],
+                  stops: const [0.0, 0.55, 1.0],
                 ),
               ),
             ),
@@ -103,7 +119,9 @@ class _SplashScreenState extends State<SplashScreen>
               right: -60,
               child: _GlowOrb(
                 size: 220,
-                color: AppColors.primary.withValues(alpha: 0.10),
+                color: AppColors.primary.withValues(
+                  alpha: isDark ? 0.18 : 0.10,
+                ),
               ),
             ),
             Positioned(
@@ -111,11 +129,13 @@ class _SplashScreenState extends State<SplashScreen>
               left: -90,
               child: _GlowOrb(
                 size: 280,
-                color: AppColors.primaryLight.withValues(alpha: 0.12),
+                color: AppColors.primaryLight.withValues(
+                  alpha: isDark ? 0.14 : 0.12,
+                ),
               ),
             ),
 
-            // Brand mark
+            // Brand mark — AuthLogo picks light/dark asset from Theme brightness.
             Center(
               child: FadeTransition(
                 opacity: _fade,
@@ -138,9 +158,7 @@ class _SplashScreenState extends State<SplashScreen>
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                             letterSpacing: 0.4,
-                            color: AppColors.textSecondary.withValues(
-                              alpha: 0.9,
-                            ),
+                            color: taglineColor,
                           ),
                         ),
                       ],
@@ -169,7 +187,7 @@ class _SplashScreenState extends State<SplashScreen>
                             child: LinearProgressIndicator(
                               minHeight: 3,
                               backgroundColor: AppColors.primary.withValues(
-                                alpha: 0.12,
+                                alpha: isDark ? 0.22 : 0.12,
                               ),
                               color: AppColors.primary.withValues(
                                 alpha: 0.55 + (_pulse.value * 0.35),
@@ -187,7 +205,7 @@ class _SplashScreenState extends State<SplashScreen>
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
                         letterSpacing: 0.8,
-                        color: AppColors.textHint.withValues(alpha: 0.85),
+                        color: versionColor,
                       ),
                     ),
                   ],
