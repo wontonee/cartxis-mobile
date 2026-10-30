@@ -11,7 +11,7 @@
 <p align="center">
   <a href="https://cartxis.com">cartxis.com</a> •
   <a href="https://github.com/wontonee/cartxis">Backend Repository</a> •
-  Demo v1.0.0
+  Demo v1.0.1
 </p>
 
 ---
