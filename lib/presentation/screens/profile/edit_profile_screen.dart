@@ -361,35 +361,56 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     shape: BoxShape.circle,
                                     color: AppColors.primary,
                                     border: Border.all(
-                                      color: isDark ? const Color(0xFF1F2937) : Colors.white,
+                                      color: isDark
+                                          ? const Color(0xFF1F2937)
+                                          : Colors.white,
                                       width: 3,
                                     ),
-                                    image: _selectedAvatar != null
-                                        ? DecorationImage(
-                                            image: FileImage(_selectedAvatar!),
-                                            fit: BoxFit.cover,
-                                          )
-                                        : (_user?.avatarUrl != null
-                                            ? DecorationImage(
-                                                image: NetworkImage(
-                                                  '${_user!.avatarUrl!}?t=${DateTime.now().millisecondsSinceEpoch}',
-                                                ),
-                                                fit: BoxFit.cover,
-                                              )
-                                            : null),
                                   ),
-                                  child: _selectedAvatar == null && _user?.avatarUrl == null
-                                      ? Center(
-                                          child: Text(
-                                            _user?.name.substring(0, 1).toUpperCase() ?? 'U',
-                                            style: const TextStyle(
-                                              fontSize: 40,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white,
-                                            ),
-                                          ),
+                                  clipBehavior: Clip.antiAlias,
+                                  child: _selectedAvatar != null
+                                      ? Image.file(
+                                          _selectedAvatar!,
+                                          fit: BoxFit.cover,
+                                          width: 100,
+                                          height: 100,
                                         )
-                                      : null,
+                                      : (_user?.avatarUrl != null
+                                          ? Image.network(
+                                              '${_user!.avatarUrl!}?t=${DateTime.now().millisecondsSinceEpoch}',
+                                              fit: BoxFit.cover,
+                                              width: 100,
+                                              height: 100,
+                                              errorBuilder: (_, __, ___) =>
+                                                  Center(
+                                                child: Text(
+                                                  _user?.name.isNotEmpty == true
+                                                      ? _user!.name
+                                                          .substring(0, 1)
+                                                          .toUpperCase()
+                                                      : 'U',
+                                                  style: const TextStyle(
+                                                    fontSize: 40,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                          : Center(
+                                              child: Text(
+                                                _user?.name.isNotEmpty == true
+                                                    ? _user!.name
+                                                        .substring(0, 1)
+                                                        .toUpperCase()
+                                                    : 'U',
+                                                style: const TextStyle(
+                                                  fontSize: 40,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            )),
                                 ),
                                 Positioned(
                                   bottom: 0,

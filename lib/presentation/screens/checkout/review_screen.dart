@@ -981,22 +981,23 @@ class _ReviewScreenState extends State<ReviewScreen> {
       ),
       child: Row(
         children: [
-          Container(
-            width: 70,
-            height: 70,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              width: 70,
+              height: 70,
               color: isDark ? const Color(0xFF334155) : Colors.grey[200],
-              image: productImage.isNotEmpty
-                  ? DecorationImage(
-                      image: NetworkImage(productImage),
+              child: productImage.isNotEmpty
+                  ? Image.network(
+                      productImage,
                       fit: BoxFit.cover,
+                      width: 70,
+                      height: 70,
+                      errorBuilder: (_, __, ___) =>
+                          Icon(Icons.image, color: mutedColor),
                     )
-                  : null,
+                  : Icon(Icons.image, color: mutedColor),
             ),
-            child: productImage.isEmpty
-                ? Icon(Icons.image, color: mutedColor)
-                : null,
           ),
           const SizedBox(width: 12),
           Expanded(

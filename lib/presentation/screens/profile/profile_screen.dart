@@ -201,50 +201,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             padding: const EdgeInsets.all(24),
                             child: Column(
                               children: [
-                              // Avatar with Edit Button
-                              Stack(
-                                children: [
-                                  Container(
-                                    width: 112,
-                                    height: 112,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-                                        width: 4,
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.1),
-                                          blurRadius: 20,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                      ],
-                                      image: _user?.avatarUrl != null
-                                          ? DecorationImage(
-                                              image: NetworkImage(
-                                                '${_user!.avatarUrl!}?t=${DateTime.now().millisecondsSinceEpoch}',
-                                              ),
-                                              fit: BoxFit.cover,
-                                            )
-                                          : null,
-                                      color: _user?.avatarUrl == null ? AppColors.primary : null,
-                                    ),
-                                    child: _user?.avatarUrl == null
-                                        ? Center(
-                                            child: Text(
-                                              _user?.name.substring(0, 1).toUpperCase() ?? 'U',
-                                              style: const TextStyle(
-                                                fontSize: 40,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.white,
-                                              ),
-                                            ),
-                                          )
-                                        : null,
+                              // Avatar — Image.network + errorBuilder so 404s
+                              // don't throw FlutterError into Crashlytics.
+                              Container(
+                                width: 112,
+                                height: 112,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: AppColors.primary,
+                                  border: Border.all(
+                                    color: isDark
+                                        ? const Color(0xFF1E293B)
+                                        : Colors.white,
+                                    width: 4,
                                   ),
-                          ],
-                        ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                clipBehavior: Clip.antiAlias,
+                                child: _user?.avatarUrl != null
+                                    ? Image.network(
+                                        '${_user!.avatarUrl!}?t=${DateTime.now().millisecondsSinceEpoch}',
+                                        fit: BoxFit.cover,
+                                        width: 112,
+                                        height: 112,
+                                        errorBuilder: (_, __, ___) => Center(
+                                          child: Text(
+                                            _user?.name.isNotEmpty == true
+                                                ? _user!.name
+                                                    .substring(0, 1)
+                                                    .toUpperCase()
+                                                : 'U',
+                                            style: const TextStyle(
+                                              fontSize: 40,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    : Center(
+                                        child: Text(
+                                          _user?.name.isNotEmpty == true
+                                              ? _user!.name
+                                                  .substring(0, 1)
+                                                  .toUpperCase()
+                                              : 'U',
+                                          style: const TextStyle(
+                                            fontSize: 40,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                              ),
                               const SizedBox(height: 16),
 
                               // Name and Email
