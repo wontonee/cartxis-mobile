@@ -36,4 +36,69 @@ void main() {
       );
     });
   });
+
+  group('isBenignFlutterFrameworkError', () {
+    test('matches RenderFlex overflow from Crashlytics 1.0.3', () {
+      expect(
+        isBenignFlutterFrameworkError(
+          Exception(
+            'A RenderFlex overflowed by 17 pixels on the bottom.',
+          ),
+        ),
+        isTrue,
+      );
+      expect(
+        isBenignFlutterFrameworkError(
+          Exception(
+            'A RenderFlex overflowed by 12 pixels on the bottom.',
+          ),
+        ),
+        isTrue,
+      );
+    });
+
+    test('matches ParentDataWidget / deactivated widget asserts', () {
+      expect(
+        isBenignFlutterFrameworkError(
+          Exception('Incorrect use of ParentDataWidget.'),
+        ),
+        isTrue,
+      );
+      expect(
+        isBenignFlutterFrameworkError(
+          Exception('Looking up a deactivated widget\'s ancestor is unsafe.'),
+        ),
+        isTrue,
+      );
+    });
+
+    test('does not treat real exceptions as layout noise', () {
+      expect(
+        isBenignFlutterFrameworkError(Exception('Null check operator used on a null value')),
+        isFalse,
+      );
+      expect(isBenignFlutterFrameworkError(StateError('bad state')), isFalse);
+    });
+  });
+
+  group('isNonFatalFlutterError', () {
+    test('covers image and layout cases', () {
+      expect(
+        isNonFatalFlutterError(
+          Exception('A RenderFlex overflowed by 17 pixels on the bottom.'),
+        ),
+        isTrue,
+      );
+      expect(
+        isNonFatalFlutterError(
+          Exception('HTTP request failed, statusCode: 404, https://x/a.jpg'),
+        ),
+        isTrue,
+      );
+      expect(
+        isNonFatalFlutterError(Exception('Null check operator')),
+        isFalse,
+      );
+    });
+  });
 }

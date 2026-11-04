@@ -20,10 +20,10 @@ Future<void> main() async {
   );
 
   // Forward Flutter framework + async errors to Crashlytics.
-  // NetworkImage HTTP failures (e.g. missing avatar 404) are non-fatal —
-  // they are UI degradations handled by errorBuilder, not app crashes.
+  // Image 404s and layout overflows (RenderFlex) are non-fatal — UI
+  // degradations, not process crashes.
   FlutterError.onError = (details) {
-    if (isBenignImageLoadError(details.exception)) {
+    if (isNonFatalFlutterError(details.exception)) {
       FlutterError.presentError(details);
       FirebaseCrashlytics.instance.recordFlutterError(details);
       return;
@@ -31,7 +31,7 @@ Future<void> main() async {
     FirebaseCrashlytics.instance.recordFlutterFatalError(details);
   };
   PlatformDispatcher.instance.onError = (error, stack) {
-    final fatal = !isBenignImageLoadError(error);
+    final fatal = !isNonFatalFlutterError(error);
     FirebaseCrashlytics.instance.recordError(error, stack, fatal: fatal);
     return true;
   };
